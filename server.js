@@ -12,7 +12,6 @@ const N = ec.n;
 const PORT = 8080;
 const HITS_FILE = path.join(__dirname, 'puzzle_hits.json');
 const WALLETS_FILE = path.join(__dirname, 'found_wallets.json');
-const PUBKEYS_FILE = path.join(__dirname, 'puzzle_pubkeys.json');
 
 // ── BIP39 Wordlist ──
 
@@ -279,58 +278,22 @@ try { puzzleHits = JSON.parse(fs.readFileSync(HITS_FILE, 'utf8')); } catch {}
 try { foundWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8')); } catch {}
 try { puzzleBalanceFinds = JSON.parse(fs.readFileSync(path.join(__dirname, 'puzzle_balance_finds.json'), 'utf8')); } catch {}
 
-// ── Puzzle public keys (loaded from file or fetched from blockchain) ──
+// ── Known puzzle public keys (from creator's 2019 dust transactions — every 5th puzzle) ──
+// Only 5 unsolved puzzles have known pubkeys. Kangaroo targets these.
+
+const KNOWN_PUBKEYS = {
+  '1QKBaU6WAeycb3DbKbLBkX7vJiaS8r42Xo': '031f6a332d3c5c4f2de2378c012f429cd109ba07d69690c6c701b6bb87860d6640', // #140
+  '19GpszRNUej5yYqxXoLnbZWKew3KdVLkXg': '03afdda497369e219a2c1c369954a930e4d3740968e5e4352475bcffce3140dae5', // #145
+  '1MUJSJYtGPVGkBCTqGspnxyHahpt5Te8jy': '03137807790ea7dc6e97901c2bc87411f45ed74a5629315c4e4b03a0a102250c49', // #150
+  '1AoeP37TmHdFh8uN72fu9AqgtLrUwcv2wJ': '035cd1854cae45391ca4ec428cc7e6c7d9984424b954209a8eea197b9e364c05f6', // #155
+  '1NBC8uXJy1GiJ6drkiZa1WuKn51ps7EPTv': '02e0a8b039282faf6fe0fd769cfbc4b6b4cf8758ba68220eac420e32b91ddfa673', // #160
+};
 
 const puzzlePubKeys = new Map();
-try {
-  const saved = JSON.parse(fs.readFileSync(PUBKEYS_FILE, 'utf8'));
-  for (const [addr, hex] of Object.entries(saved)) {
-    try { puzzlePubKeys.set(addr, ec.keyFromPublic(hex, 'hex').getPublic()); } catch {}
-  }
-} catch {}
-
-async function fetchPubKeyForAddress(address) {
-  try {
-    const txs = await fetchJSON(`https://blockstream.info/api/address/${address}/txs`);
-    for (const tx of txs) {
-      for (const vin of tx.vin) {
-        if (vin.prevout && vin.prevout.scriptpubkey_address === address && vin.scriptsig) {
-          const sigHex = vin.scriptsig;
-          const pubStart = sigHex.length - 66;
-          if (pubStart > 0) {
-            const pubHex = sigHex.slice(pubStart);
-            if (pubHex.startsWith('02') || pubHex.startsWith('03')) {
-              return ec.keyFromPublic(pubHex, 'hex').getPublic();
-            }
-          }
-        }
-      }
-    }
-  } catch {}
-  return null;
+for (const [addr, hex] of Object.entries(KNOWN_PUBKEYS)) {
+  try { puzzlePubKeys.set(addr, ec.keyFromPublic(hex, 'hex').getPublic()); } catch {}
 }
-
-async function loadPubKeys() {
-  console.log('Fetching public keys for puzzle addresses from blockchain...');
-  let found = 0;
-  for (const p of PUZZLES) {
-    if (puzzlePubKeys.has(p.addr)) { found++; continue; }
-    await new Promise(r => setTimeout(r, 200));
-    const pub = await fetchPubKeyForAddress(p.addr);
-    if (pub) {
-      puzzlePubKeys.set(p.addr, pub);
-      found++;
-      console.log(`  Found pubkey for puzzle #${p.n}`);
-    }
-  }
-  if (puzzlePubKeys.size > 0) {
-    const obj = {};
-    for (const [addr, pub] of puzzlePubKeys) obj[addr] = Buffer.from(pub.encode('array', true)).toString('hex');
-    fs.writeFileSync(PUBKEYS_FILE, JSON.stringify(obj, null, 2));
-  }
-  console.log(`Public keys: ${puzzlePubKeys.size}/${PUZZLES.length} available`);
-  methods.kangaroo.status = puzzlePubKeys.size > 0 ? 'active' : 'no pubkeys';
-}
+console.log(`Loaded ${puzzlePubKeys.size} known puzzle public keys for Kangaroo`);
 
 // ══════════════════════════════════════════
 // ── PUZZLE SEARCH METHODS ──
@@ -339,7 +302,7 @@ async function loadPubKeys() {
 const methods = {
   random:     { name: 'Random Brute',    checked: 0, speed: 0, _keysThisSec: 0, status: 'active', target: 'all' },
   sequential: { name: 'Sequential Scan', checked: 0, speed: 0, _keysThisSec: 0, status: 'active', target: '71-90' },
-  kangaroo:   { name: 'Kangaroo',        checked: 0, speed: 0, _keysThisSec: 0, status: 'loading', target: 'with pubkey' },
+  kangaroo:   { name: 'Kangaroo',        checked: 0, speed: 0, _keysThisSec: 0, status: puzzlePubKeys.size > 0 ? 'active' : 'no pubkeys', target: `${puzzlePubKeys.size} targets` },
 };
 
 function recordHit(method, puzzleNum, btc, privateKeyHex, address) {
@@ -617,8 +580,8 @@ console.log('  [2] Sequential Scan (puzzles #71-90)');
 initSeqScan();
 sequentialBatch();
 
-console.log('  [3] Pollard\'s Kangaroo (loading pubkeys...)');
-loadPubKeys().then(() => kangarooBatch());
+console.log(`  [3] Pollard's Kangaroo (${puzzlePubKeys.size} targets with known pubkeys)`);
+kangarooBatch();
 
 console.log('  [4] Balance checker (async, sampling puzzle keys)');
 balanceCheckLoop();
