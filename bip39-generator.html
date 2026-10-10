@@ -135,6 +135,15 @@
 
   .empty-state { text-align: center; color: var(--fg-dim); padding: 3rem 1rem; font-size: 0.9375rem; }
 
+  .server-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--fg-dim); padding: 0.5rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.75rem; }
+  .server-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+  .server-dot.connected { background: var(--green); }
+  .server-dot.connecting { background: var(--orange); animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+  .server-stats { display: flex; gap: 1rem; flex-wrap: wrap; flex: 1; }
+  .server-stats span { white-space: nowrap; }
+  .server-stats strong { color: var(--fg); font-variant-numeric: tabular-nums; }
+
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner { display: inline-block; width: 8px; height: 8px; border: 1.5px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin .5s linear infinite; }
 
@@ -163,6 +172,12 @@
       <span class="auto-label">Auto</span>
     </label>
     <span class="batch-count" id="batchCount" hidden></span>
+  </div>
+
+  <div class="server-status" id="serverStatus">
+    <span class="server-dot" id="serverDot"></span>
+    <span id="serverLabel">Server: disconnected</span>
+    <div class="server-stats" id="serverStats"></div>
   </div>
 
   <div class="tab-bar">
@@ -1266,6 +1281,110 @@ document.getElementById('autoGenToggle').addEventListener('change', function() {
 });
 updateFoundCount();
 updatePuzzleHitCount();
+
+// ── Server-Sent Events (live server data) ──
+
+let sseSource = null;
+let serverWalletCount = 0;
+let serverPuzzleCount = 0;
+let serverPuzzleSpeed = 0;
+
+function connectSSE() {
+  const dot = document.getElementById('serverDot');
+  const label = document.getElementById('serverLabel');
+  const stats = document.getElementById('serverStats');
+  dot.className = 'server-dot connecting';
+  label.textContent = 'Server: connecting...';
+
+  const baseUrl = location.protocol + '//' + location.host;
+  sseSource = new EventSource(baseUrl + '/api/stream');
+
+  sseSource.onopen = () => {
+    dot.className = 'server-dot connected';
+    label.textContent = 'Server: live';
+  };
+
+  sseSource.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      handleServerEvent(d, stats);
+    } catch {}
+  };
+
+  sseSource.onerror = () => {
+    dot.className = 'server-dot';
+    label.textContent = 'Server: reconnecting...';
+    sseSource.close();
+    setTimeout(connectSSE, 5000);
+  };
+}
+
+function handleServerEvent(d, statsEl) {
+  switch (d.type) {
+    case 'init':
+      serverPuzzleCount = d.puzzleChecked || 0;
+      serverWalletCount = d.walletChecked || 0;
+      if (d.foundWallets) d.foundWallets.forEach(w => mergeServerWallet(w));
+      if (d.puzzleHits) d.puzzleHits.forEach(h => mergeServerPuzzleHit(h));
+      updateServerStats(statsEl, d.uptime);
+      break;
+
+    case 'stats':
+      serverPuzzleCount = d.puzzleChecked || 0;
+      serverPuzzleSpeed = d.puzzleSpeed || 0;
+      serverWalletCount = d.walletChecked || 0;
+      updateServerStats(statsEl, d.uptime);
+      break;
+
+    case 'wallet_found':
+      mergeServerWallet(d);
+      bigAlert('Server found wallet!', `Mnemonic: ${d.mnemonic.split(' ').slice(0, 4).join(' ')}... Balances: ${JSON.stringify(d.balances)}`);
+      break;
+
+    case 'puzzle_hit':
+      mergeServerPuzzleHit(d);
+      bigAlert(`SERVER: PUZZLE #${d.puzzleNum} SOLVED!`, `${d.btc} BTC! Key: ${d.privateKey.slice(0, 20)}...`);
+      break;
+
+    case 'wallet_checked':
+      serverWalletCount = d.num || serverWalletCount;
+      if (d.hasFunds) mergeServerWallet(d);
+      break;
+  }
+}
+
+function updateServerStats(el, uptime) {
+  const hrs = Math.floor((uptime || 0) / 3600);
+  const mins = Math.floor(((uptime || 0) % 3600) / 60);
+  el.innerHTML = `
+    <span>Puzzle keys/s: <strong>${serverPuzzleSpeed.toLocaleString()}</strong></span>
+    <span>Puzzle checked: <strong>${serverPuzzleCount.toLocaleString()}</strong></span>
+    <span>Wallets checked: <strong>${serverWalletCount.toLocaleString()}</strong></span>
+    <span>Uptime: <strong>${hrs}h ${mins}m</strong></span>`;
+}
+
+function mergeServerWallet(w) {
+  if (!w.mnemonic) return;
+  const balTexts = w.balances ? (Array.isArray(w.balances) ? w.balances : Object.entries(w.balances).map(([k,v]) => `${v} ${k}`)) : [];
+  const found = loadFoundWallets();
+  if (found.some(f => f.mnemonic === w.mnemonic)) return;
+  found.push({ mnemonic: w.mnemonic, addrs: w.addrs || {}, balances: balTexts, timestamp: w.timestamp || Date.now(), source: 'server' });
+  try { localStorage.setItem(FOUND_KEY, JSON.stringify(found)); } catch {}
+  updateFoundCount();
+  if (!document.getElementById('foundTab').hidden) renderFoundTab();
+}
+
+function mergeServerPuzzleHit(h) {
+  if (!h.address && !h.privateKey) return;
+  const hits = loadPuzzleHits();
+  if (hits.some(x => x.privateKey === h.privateKey)) return;
+  hits.push({ puzzleNum: h.puzzleNum, btc: h.btc, privateKey: h.privateKey, address: h.address, timestamp: h.timestamp || Date.now(), source: 'server' });
+  try { localStorage.setItem(PUZZLE_HIT_KEY, JSON.stringify(hits)); } catch {}
+  updatePuzzleHitCount();
+  if (!document.getElementById('puzzlesTab').hidden) renderPuzzleTab();
+}
+
+connectSSE();
 </script>
 </body>
 </html>

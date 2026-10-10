@@ -1,0 +1,10 @@
+{
+  "name": "bip39-generator",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "elliptic": "^6.5.4"
+  }
+}

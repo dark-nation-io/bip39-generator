@@ -17,10 +17,10 @@ jobs:
           username: root
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 20005
-          source: "bip39-generator.html"
+          source: "bip39-generator.html,server.js,package.json"
           target: "/opt/bip39"
 
-      - name: Start services
+      - name: Install deps and restart
         uses: appleboy/ssh-action@v1
         with:
           host: 51.77.117.66
@@ -28,12 +28,18 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 20005
           script: |
-            if ! pgrep -f "python3 -m http.server 8080" > /dev/null; then
-              nohup python3 -m http.server 8080 --directory /opt/bip39 > /dev/null 2>&1 &
-              echo "HTTP server started"
-            else
-              echo "HTTP server already running"
-            fi
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>/dev/null || true
+            apt-get install -y nodejs 2>/dev/null || true
+
+            cd /opt/bip39
+            npm install --production
+
+            pkill -f "node server.js" 2>/dev/null || true
+            pkill -f "python3 -m http.server" 2>/dev/null || true
+            sleep 1
+
+            nohup node server.js > /opt/bip39/server.log 2>&1 &
+            echo "Node server started on port 8080"
 
             if ! pgrep -f "ngrok http 8080" > /dev/null; then
               nohup ngrok http 8080 --log=stdout > /tmp/ngrok.log 2>&1 &
@@ -41,4 +47,4 @@ jobs:
               echo "ngrok started"
             fi
 
-            curl -s http://127.0.0.1:4040/api/tunnels | python3 -c "import sys,json; print(json.load(sys.stdin)['tunnels'][0]['public_url'])" 2>/dev/null || echo "ngrok URL not ready yet - check /tmp/ngrok.log"
+            curl -s http://127.0.0.1:4040/api/tunnels | python3 -c "import sys,json; print(json.load(sys.stdin)['tunnels'][0]['public_url'])" 2>/dev/null || echo "ngrok URL not ready yet"
