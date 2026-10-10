@@ -133,6 +133,19 @@
   .puzzle-stat strong { color: var(--fg); font-variant-numeric: tabular-nums; }
   .puzzle-match { border-color: var(--green) !important; box-shadow: 0 0 12px rgba(74, 222, 128, 0.15); }
 
+  .methods-table { width: 100%; border-collapse: collapse; margin-bottom: 0.75rem; font-size: 0.75rem; }
+  .methods-table th { text-align: left; padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--fg-dim); font-weight: 600; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .methods-table td { padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  .methods-table tr:last-child td { border-bottom: none; }
+  .method-name { font-weight: 600; color: var(--fg); }
+  .method-status { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; }
+  .method-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .method-dot.active { background: var(--green); }
+  .method-dot.loading { background: var(--orange); animation: pulse 1s infinite; }
+  .method-dot.stopped { background: var(--red); }
+  .method-dot.nodata { background: var(--fg-dim); }
+  .balance-find-card { border-color: var(--orange) !important; box-shadow: 0 0 12px rgba(251, 146, 60, 0.15); }
+
   .empty-state { text-align: center; color: var(--fg-dim); padding: 3rem 1rem; font-size: 0.9375rem; }
 
   .server-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--fg-dim); padding: 0.5rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.75rem; }
@@ -200,17 +213,30 @@
     <div class="puzzle-controls">
       <button class="btn btn-primary" id="puzzleSearchBtn" onclick="togglePuzzleSearch()">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Start Search
+        Start Browser Search
       </button>
       <div class="puzzle-stats">
-        <span class="puzzle-stat">Keys/s: <strong id="puzzleSpeed">0</strong></span>
-        <span class="puzzle-stat">Checked: <strong id="puzzleChecked">0</strong></span>
+        <span class="puzzle-stat">Browser keys/s: <strong id="puzzleSpeed">0</strong></span>
+        <span class="puzzle-stat">Browser checked: <strong id="puzzleChecked">0</strong></span>
         <span class="puzzle-stat">Targeting: <strong>77 puzzles</strong></span>
         <span class="puzzle-stat">Prize: <strong>~903 BTC</strong></span>
       </div>
     </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
+      <div style="font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem;color:var(--fg);">Server Search Methods</div>
+      <table class="methods-table" id="methodsTable">
+        <thead><tr><th>Method</th><th>Keys/s</th><th>Checked</th><th>Target</th><th>Status</th></tr></thead>
+        <tbody id="methodsBody">
+          <tr><td colspan="5" style="color:var(--fg-dim);text-align:center;">Waiting for server connection...</td></tr>
+        </tbody>
+      </table>
+      <div style="display:flex;gap:1rem;font-size:0.6875rem;color:var(--fg-dim);margin-top:0.375rem;">
+        <span>Balance queue: <strong id="balQueueSize" style="color:var(--fg)">0</strong></span>
+        <span>Balance finds: <strong id="balFindCount" style="color:var(--fg)">0</strong></span>
+      </div>
+    </div>
     <div class="phrases" id="puzzleList">
-      <div class="empty-state">Hit Start to search for puzzle private keys within their known ranges</div>
+      <div class="empty-state">Server searches 24/7. Browser search is optional (slower but adds coverage).</div>
     </div>
   </div>
 </div>
@@ -1232,15 +1258,17 @@ function updatePuzzleHitCount() {
 
 function renderPuzzleTab() {
   const hits = loadPuzzleHits();
+  const balFinds = loadBalanceFinds();
   const list = document.getElementById('puzzleList');
   document.getElementById('puzzleChecked').textContent = puzzleCheckedCount.toLocaleString();
   updatePuzzleHitCount();
 
-  if (!hits.length) {
-    list.innerHTML = '<div class="empty-state">Hit Start to search for puzzle private keys within their known ranges</div>';
+  if (!hits.length && !balFinds.length) {
+    list.innerHTML = '<div class="empty-state">Server searches 24/7. Browser search is optional (slower but adds coverage).</div>';
     return;
   }
   list.innerHTML = '';
+
   hits.forEach((h, i) => {
     const card = document.createElement('div');
     card.className = 'phrase-card puzzle-match';
@@ -1251,10 +1279,31 @@ function renderPuzzleTab() {
         <div class="phrase-meta">
           <span class="found-bal">${h.btc} BTC</span>
           <span class="found-time">${new Date(h.timestamp).toLocaleString()}</span>
+          ${h.method ? `<span style="color:var(--fg-dim)">via ${h.method}</span>` : ''}
         </div>
         <div style="margin-top:0.375rem;font-family:var(--font-mono);font-size:0.6875rem;color:var(--fg-dim);">${h.address}</div>
       </div>
       <button class="copy-btn" onclick="copyPhrase(this, '${h.privateKey}')">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>`;
+    list.appendChild(card);
+  });
+
+  balFinds.forEach((f, i) => {
+    const card = document.createElement('div');
+    card.className = 'phrase-card balance-find-card';
+    card.innerHTML = `
+      <div class="phrase-number" style="background:var(--orange)">$</div>
+      <div class="phrase-content">
+        <div class="phrase-words" style="word-break:break-all">${f.privateKey}</div>
+        <div class="phrase-meta">
+          <span class="found-bal">${f.balance} BTC (balance check)</span>
+          <span class="found-time">${new Date(f.timestamp).toLocaleString()}</span>
+        </div>
+        <div style="margin-top:0.375rem;font-family:var(--font-mono);font-size:0.6875rem;color:var(--fg-dim);">${f.address}</div>
+      </div>
+      <button class="copy-btn" onclick="copyPhrase(this, '${f.privateKey}')">
         <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         Copy
       </button>`;
@@ -1326,6 +1375,8 @@ function handleServerEvent(d, statsEl) {
       serverWalletCount = d.walletChecked || 0;
       if (d.foundWallets) d.foundWallets.forEach(w => mergeServerWallet(w));
       if (d.puzzleHits) d.puzzleHits.forEach(h => mergeServerPuzzleHit(h));
+      if (d.puzzleBalanceFinds) d.puzzleBalanceFinds.forEach(f => mergeBalanceFind(f));
+      if (d.methods) updateMethodsTable(d.methods);
       updateServerStats(statsEl, d.uptime);
       break;
 
@@ -1333,6 +1384,15 @@ function handleServerEvent(d, statsEl) {
       serverPuzzleCount = d.puzzleChecked || 0;
       serverPuzzleSpeed = d.puzzleSpeed || 0;
       serverWalletCount = d.walletChecked || 0;
+      if (d.methods) updateMethodsTable(d.methods);
+      if (d.balanceQueueSize !== undefined) {
+        const bq = document.getElementById('balQueueSize');
+        if (bq) bq.textContent = d.balanceQueueSize;
+      }
+      if (d.puzzleBalanceFinds !== undefined) {
+        const bf = document.getElementById('balFindCount');
+        if (bf) bf.textContent = d.puzzleBalanceFinds;
+      }
       updateServerStats(statsEl, d.uptime);
       break;
 
@@ -1344,6 +1404,11 @@ function handleServerEvent(d, statsEl) {
     case 'puzzle_hit':
       mergeServerPuzzleHit(d);
       bigAlert(`SERVER: PUZZLE #${d.puzzleNum} SOLVED!`, `${d.btc} BTC! Key: ${d.privateKey.slice(0, 20)}...`);
+      break;
+
+    case 'puzzle_balance_find':
+      mergeBalanceFind(d);
+      bigAlert('BTC BALANCE FOUND!', `${d.address} has ${d.balance} BTC! Key: ${d.privateKey.slice(0, 20)}...`);
       break;
 
     case 'wallet_checked':
@@ -1378,9 +1443,42 @@ function mergeServerPuzzleHit(h) {
   if (!h.address && !h.privateKey) return;
   const hits = loadPuzzleHits();
   if (hits.some(x => x.privateKey === h.privateKey)) return;
-  hits.push({ puzzleNum: h.puzzleNum, btc: h.btc, privateKey: h.privateKey, address: h.address, timestamp: h.timestamp || Date.now(), source: 'server' });
+  hits.push({ puzzleNum: h.puzzleNum, btc: h.btc, privateKey: h.privateKey, address: h.address, method: h.method || '', timestamp: h.timestamp || Date.now(), source: 'server' });
   try { localStorage.setItem(PUZZLE_HIT_KEY, JSON.stringify(hits)); } catch {}
   updatePuzzleHitCount();
+  if (!document.getElementById('puzzlesTab').hidden) renderPuzzleTab();
+}
+
+function updateMethodsTable(methods) {
+  const body = document.getElementById('methodsBody');
+  if (!body) return;
+  body.innerHTML = '';
+  for (const [id, m] of Object.entries(methods)) {
+    const dotClass = m.status === 'active' ? 'active' : m.status === 'loading' ? 'loading' : m.status === 'no pubkeys' ? 'nodata' : 'stopped';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="method-name">${m.name}</td>
+      <td>${(m.speed || 0).toLocaleString()}</td>
+      <td>${(m.checked || 0).toLocaleString()}</td>
+      <td style="color:var(--fg-dim)">${m.target || '—'}</td>
+      <td><span class="method-status"><span class="method-dot ${dotClass}"></span>${m.status}</span></td>`;
+    body.appendChild(tr);
+  }
+}
+
+const BAL_FIND_KEY = 'bip39_balance_finds';
+
+function loadBalanceFinds() {
+  try { return JSON.parse(localStorage.getItem(BAL_FIND_KEY)) || []; }
+  catch { return []; }
+}
+
+function mergeBalanceFind(f) {
+  if (!f.privateKey) return;
+  const finds = loadBalanceFinds();
+  if (finds.some(x => x.privateKey === f.privateKey)) return;
+  finds.push({ privateKey: f.privateKey, address: f.address, balance: f.balance, timestamp: f.timestamp || Date.now() });
+  try { localStorage.setItem(BAL_FIND_KEY, JSON.stringify(finds)); } catch {}
   if (!document.getElementById('puzzlesTab').hidden) renderPuzzleTab();
 }
 
