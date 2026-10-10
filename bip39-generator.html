@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIP39 Test Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-hover: #222632;
+    --border: #2a2e3a;
+    --fg: #e2e4ea;
+    --fg-dim: #8b8fa3;
+    --accent: #6c72cb;
+    --accent-hover: #7f85d8;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --red: #f87171;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5f7; --surface: #fff; --surface-hover: #f0f1f4; --border: #d8dae0;
+      --fg: #1a1d27; --fg-dim: #6b7085; --accent: #5b60b8; --accent-hover: #4e53a3;
+      --green: #16a34a; --orange: #ea580c; --red: #dc2626; color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f5f7; --surface: #fff; --surface-hover: #f0f1f4; --border: #d8dae0;
+    --fg: #1a1d27; --fg-dim: #6b7085; --accent: #5b60b8; --accent-hover: #4e53a3;
+    --green: #16a34a; --orange: #ea580c; --red: #dc2626; color-scheme: light;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); display: flex; flex-direction: column; align-items: center; padding: 3rem 16px; min-height: 100vh; }
+  .container { width: 100%; max-width: 660px; }
+  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--fg-dim); font-size: 0.875rem; margin-bottom: 2rem; }
+
+  .btn-bar { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 0.75rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; border: none; padding: 0.625rem 1.25rem; border-radius: 8px; font-family: var(--font-body); font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background .15s, opacity .15s; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; color: var(--fg-dim); border: 1px solid var(--border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--surface-hover); color: var(--fg); border-color: var(--fg-dim); }
+
+  .batch-count { color: var(--fg-dim); font-size: 0.8125rem; margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  .phrases { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .phrase-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; display: flex; align-items: flex-start; gap: 0.75rem; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .phrase-number { flex-shrink: 0; width: 28px; height: 28px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 0.8125rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  .phrase-content { flex: 1; min-width: 0; }
+  .phrase-words { font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.7; word-break: break-word; user-select: all; }
+  .phrase-meta { margin-top: 0.375rem; font-size: 0.75rem; color: var(--fg-dim); display: flex; align-items: center; gap: 0.375rem; }
+  .valid-badge { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--green); font-weight: 500; }
+  .valid-badge svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .copy-btn { flex-shrink: 0; background: transparent; border: 1px solid var(--border); color: var(--fg-dim); padding: 0.375rem 0.625rem; border-radius: 6px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 0.375rem; align-self: center; }
+  .copy-btn:hover { background: var(--surface-hover); color: var(--fg); border-color: var(--fg-dim); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+  .copy-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Wallet section */
+  .wallet-details { margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.5rem; }
+  .wallet-details summary { cursor: pointer; font-size: 0.75rem; color: var(--fg-dim); display: flex; align-items: center; gap: 0.5rem; user-select: none; list-style: none; padding: 0.25rem 0; }
+  .wallet-details summary::-webkit-details-marker { display: none; }
+  .wallet-details summary::before { content: '\25B8'; font-size: 0.625rem; transition: transform .15s; display: inline-block; }
+  .wallet-details[open] summary::before { transform: rotate(90deg); }
+  .chain-count { opacity: 0.7; }
+
+  .chain-group { margin-top: 0.5rem; }
+  .chain-group + .chain-group { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+  .chain-group-label { font-size: 0.6875rem; color: var(--fg-dim); margin-bottom: 0.375rem; display: flex; align-items: center; gap: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+  .evm-addr { font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; text-transform: none; cursor: pointer; }
+  .evm-addr:hover { color: var(--fg); }
+
+  .chain-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.1875rem 0; font-size: 0.75rem; min-width: 0; }
+  .chain-badge { flex-shrink: 0; min-width: 40px; padding: 0.0625rem 0.375rem; border-radius: 3px; font-weight: 600; font-size: 0.625rem; letter-spacing: 0.02em; text-align: center; background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); }
+  .chain-addr { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--fg-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; cursor: pointer; }
+  .chain-addr:hover { color: var(--fg); }
+  .chain-bal { flex-shrink: 0; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--fg-dim); white-space: nowrap; text-align: right; min-width: 70px; }
+  .chain-bal.has-funds { color: var(--green); font-weight: 600; }
+  .chain-bal.loading { color: var(--orange); }
+  .chain-bal.error { color: var(--red); font-size: 0.625rem; }
+
+  .token-bals { display: flex; gap: 0.75rem; padding-left: 48px; min-height: 0; }
+  .token-bals:empty { display: none; }
+  .token-item { font-family: var(--font-mono); font-size: 0.625rem; color: var(--fg-dim); white-space: nowrap; }
+  .token-item.has-funds { color: var(--green); font-weight: 600; }
+  .token-item.loading { color: var(--orange); }
+  .token-item.error { color: var(--red); }
+
+
+  .tab-bar { display: flex; gap: 0; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+  .tab { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 0.5rem 1rem; font-family: var(--font-body); font-size: 0.8125rem; font-weight: 500; color: var(--fg-dim); cursor: pointer; transition: all .15s; }
+  .tab:hover { color: var(--fg); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .found-count { background: var(--green); color: #fff; font-size: 0.6875rem; padding: 0.0625rem 0.4rem; border-radius: 10px; margin-left: 0.375rem; font-weight: 600; }
+  .found-count:empty { display: none; }
+  .tab-content[hidden] { display: none; }
+  .found-balances { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.375rem 0.75rem; }
+  .found-bal { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--green); font-weight: 600; }
+  .found-time { color: var(--fg-dim); font-size: 0.6875rem; }
+  .delete-found { background: transparent; border: 1px solid var(--border); color: var(--red); padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.6875rem; cursor: pointer; transition: all .15s; flex-shrink: 0; align-self: center; }
+  .delete-found:hover { background: color-mix(in srgb, var(--red) 10%, transparent); border-color: var(--red); }
+
+  .auto-toggle { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; color: var(--fg-dim); cursor: pointer; user-select: none; }
+  .auto-toggle input { display: none; }
+  .toggle-track { width: 34px; height: 18px; background: var(--border); border-radius: 9px; position: relative; transition: background .2s; flex-shrink: 0; }
+  .toggle-track::after { content: ''; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; background: var(--fg-dim); border-radius: 50%; transition: transform .2s, background .2s; }
+  .auto-toggle input:checked ~ .toggle-track { background: var(--green); }
+  .auto-toggle input:checked ~ .toggle-track::after { transform: translateX(16px); background: #fff; }
+  .auto-label { font-weight: 500; transition: color .15s; }
+  .auto-toggle input:checked ~ .auto-label { color: var(--green); }
+
+  .puzzle-controls { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+  .puzzle-controls .btn { flex-shrink: 0; }
+  .puzzle-controls .btn.searching { background: var(--red); }
+  .puzzle-stats { display: flex; gap: 1rem; padding: 0.5rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; font-size: 0.75rem; color: var(--fg-dim); flex: 1; flex-wrap: wrap; }
+  .puzzle-stat strong { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .puzzle-match { border-color: var(--green) !important; box-shadow: 0 0 12px rgba(74, 222, 128, 0.15); }
+
+  .empty-state { text-align: center; color: var(--fg-dim); padding: 3rem 1rem; font-size: 0.9375rem; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 8px; height: 8px; border: 1.5px solid var(--border); border-top-color: var(--orange); border-radius: 50%; animation: spin .5s linear infinite; }
+
+  .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none; }
+  .toast { pointer-events: auto; background: var(--surface); border: 1px solid var(--green); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.8125rem; color: var(--green); font-weight: 500; box-shadow: 0 4px 24px rgba(0,0,0,0.3); animation: toastIn .3s ease, toastOut .3s ease 4.7s forwards; max-width: 340px; display: flex; align-items: center; gap: 0.5rem; }
+  .toast svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: var(--green); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .toast-persistent { animation: toastIn .3s ease; border-width: 2px; box-shadow: 0 4px 32px rgba(74, 222, 128, 0.3); }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+</style>
+</head>
+<body>
+<div class="toast-container" id="toastContainer"></div>
+<div class="container">
+  <h1>BIP39 Test Phrase Generator</h1>
+  <p class="subtitle">Generate mnemonics, derive wallet addresses across chains, and check balances</p>
+
+  <div class="btn-bar">
+    <button class="btn btn-primary" id="generateBtn">
+      <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      Generate 5
+    </button>
+    <label class="auto-toggle">
+      <input type="checkbox" id="autoGenToggle">
+      <span class="toggle-track"></span>
+      <span class="auto-label">Auto</span>
+    </label>
+    <span class="batch-count" id="batchCount" hidden></span>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" data-tab="generator" onclick="switchTab('generator')">Generator</button>
+    <button class="tab" data-tab="found" onclick="switchTab('found')">Found Wallets <span class="found-count" id="foundCount"></span></button>
+    <button class="tab" data-tab="puzzles" onclick="switchTab('puzzles')">BTC Puzzles <span class="found-count" id="puzzleHitCount"></span></button>
+  </div>
+
+  <div class="tab-content" id="generatorTab">
+    <div class="phrases" id="phraseList">
+      <div class="empty-state">Click the button to generate your first batch</div>
+    </div>
+  </div>
+  <div class="tab-content" id="foundTab" hidden>
+    <div class="phrases" id="foundList">
+      <div class="empty-state">No wallets with balance found yet</div>
+    </div>
+  </div>
+  <div class="tab-content" id="puzzlesTab" hidden>
+    <div class="puzzle-controls">
+      <button class="btn btn-primary" id="puzzleSearchBtn" onclick="togglePuzzleSearch()">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Start Search
+      </button>
+      <div class="puzzle-stats">
+        <span class="puzzle-stat">Keys/s: <strong id="puzzleSpeed">0</strong></span>
+        <span class="puzzle-stat">Checked: <strong id="puzzleChecked">0</strong></span>
+        <span class="puzzle-stat">Targeting: <strong>77 puzzles</strong></span>
+        <span class="puzzle-stat">Prize: <strong>~903 BTC</strong></span>
+      </div>
+    </div>
+    <div class="phrases" id="puzzleList">
+      <div class="empty-state">Hit Start to search for puzzle private keys within their known ranges</div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+
+<script>
+const WORDLIST = [
+"abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse",
+"access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act",
+"action","actor","actress","actual","adapt","add","addict","address","adjust","admit",
+"adult","advance","advice","aerobic","affair","afford","afraid","again","age","agent",
+"agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert",
+"alien","all","alley","allow","almost","alone","alpha","already","also","alter",
+"always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger",
+"angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique",
+"anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic",
+"area","arena","argue","arm","armed","armor","army","around","arrange","arrest",
+"arrive","arrow","art","artefact","artist","artwork","ask","aspect","assault","asset",
+"assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction",
+"audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake",
+"aware","away","awesome","awful","awkward","axis","baby","bachelor","bacon","badge",
+"bag","balance","balcony","ball","bamboo","banana","banner","bar","barely","bargain",
+"barrel","base","basic","basket","battle","beach","bean","beauty","because","become",
+"beef","before","begin","behave","behind","believe","below","belt","bench","benefit",
+"best","betray","better","between","beyond","bicycle","bid","bike","bind","biology",
+"bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless",
+"blind","blood","blossom","blouse","blue","blur","blush","board","boat","body",
+"boil","bomb","bone","bonus","book","boost","border","boring","borrow","boss",
+"bottom","bounce","box","boy","bracket","brain","brand","brass","brave","bread",
+"breeze","brick","bridge","brief","bright","bring","brisk","broccoli","broken","bronze",
+"broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb",
+"bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy",
+"butter","buyer","buzz","cabbage","cabin","cable","cactus","cage","cake","call",
+"calm","camera","camp","can","canal","cancel","candy","cannon","canoe","canvas",
+"canyon","capable","capital","captain","car","carbon","card","cargo","carpet","carry",
+"cart","case","cash","casino","castle","casual","cat","catalog","catch","category",
+"cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century",
+"cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase",
+"chat","cheap","check","cheese","chef","cherry","chest","chicken","chief","child",
+"chimney","choice","choose","chronic","chuckle","chunk","churn","cigar","cinnamon","circle",
+"citizen","city","civil","claim","clap","clarify","claw","clay","clean","clerk",
+"clever","click","client","cliff","climb","clinic","clip","clock","clog","close",
+"cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut",
+"code","coffee","coil","coin","collect","color","column","combine","come","comfort",
+"comic","common","company","concert","conduct","confirm","congress","connect","consider","control",
+"convince","cook","cool","copper","copy","coral","core","corn","correct","cost",
+"cotton","couch","country","couple","course","cousin","cover","coyote","crack","cradle",
+"craft","cram","crane","crash","crater","crawl","crazy","cream","credit","creek",
+"crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial",
+"cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup",
+"cupboard","curious","current","curtain","curve","cushion","custom","cute","cycle","dad",
+"damage","damp","dance","danger","daring","dash","daughter","dawn","day","deal",
+"debate","debris","decade","december","decide","decline","decorate","decrease","deer","defense",
+"define","defy","degree","delay","deliver","demand","demise","denial","dentist","deny",
+"depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk",
+"despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond",
+"diary","dice","diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur",
+"direct","dirt","disagree","discover","disease","dish","dismiss","disorder","display","distance",
+"divert","divide","divorce","dizzy","doctor","document","dog","doll","dolphin","domain",
+"donate","donkey","donor","door","dose","double","dove","draft","dragon","drama",
+"drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop",
+"drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf",
+"dynamic","eager","eagle","early","earn","earth","easily","east","easy","echo",
+"ecology","economy","edge","edit","educate","effort","egg","eight","either","elbow",
+"elder","electric","elegant","element","elephant","elevator","elite","else","embark","embody",
+"embrace","emerge","emotion","employ","empower","empty","enable","enact","end","endless",
+"endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough",
+"enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip",
+"era","erase","erode","erosion","error","erupt","escape","essay","essence","estate",
+"eternal","ethics","evidence","evil","evoke","evolve","exact","example","excess","exchange",
+"excite","exclude","excuse","execute","exercise","exhaust","exhibit","exile","exist","exit",
+"exotic","expand","expect","expire","explain","expose","express","extend","extra","eye",
+"eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame",
+"family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father",
+"fatigue","fault","favorite","feature","february","federal","fee","feed","feel","female",
+"fence","festival","fetch","fever","few","fiber","fiction","field","figure","file",
+"film","filter","final","find","fine","finger","finish","fire","firm","first",
+"fiscal","fish","fit","fitness","fix","flag","flame","flash","flat","flavor",
+"flee","flight","flip","float","flock","floor","flower","fluid","flush","fly",
+"foam","focus","fog","foil","fold","follow","food","foot","force","forest",
+"forget","fork","fortune","forum","forward","fossil","foster","found","fox","fragile",
+"frame","frequent","fresh","friend","fringe","frog","front","frost","frown","frozen",
+"fruit","fuel","fun","funny","furnace","fury","future","gadget","gain","galaxy",
+"gallery","game","gap","garage","garbage","garden","garlic","garment","gas","gasp",
+"gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture",
+"ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance",
+"glare","glass","glide","glimpse","globe","gloom","glory","glove","glow","glue",
+"goat","goddess","gold","good","goose","gorilla","gospel","gossip","govern","gown",
+"grab","grace","grain","grant","grape","grass","gravity","great","green","grid",
+"grief","grit","grocery","group","grow","grunt","guard","guess","guide","guilt",
+"guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy",
+"harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health",
+"heart","heavy","hedgehog","height","hello","helmet","help","hen","hero","hidden",
+"high","hill","hint","hip","hire","history","hobby","hockey","hold","hole",
+"holiday","hollow","home","honey","hood","hope","horn","horror","horse","hospital",
+"host","hotel","hour","hover","hub","huge","human","humble","humor","hundred",
+"hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea",
+"identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune",
+"impact","impose","improve","impulse","inch","include","income","increase","index","indicate",
+"indoor","industry","infant","inflict","inform","inhale","inherit","initial","inject","injury",
+"inmate","inner","innocent","input","inquiry","insane","insect","inside","inspire","install",
+"intact","interest","into","invest","invite","involve","iron","island","isolate","issue",
+"item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel",
+"job","join","joke","journey","joy","judge","juice","jump","jungle","junior",
+"junk","just","kangaroo","keen","keep","ketchup","key","kick","kid","kidney",
+"kind","kingdom","kiss","kit","kitchen","kite","kitten","kiwi","knee","knife",
+"knock","know","lab","label","labor","ladder","lady","lake","lamp","language",
+"laptop","large","later","latin","laugh","laundry","lava","law","lawn","lawsuit",
+"layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal",
+"legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level",
+"liar","liberty","library","license","life","lift","light","like","limb","limit",
+"link","lion","liquid","list","little","live","lizard","load","loan","lobster",
+"local","lock","logic","lonely","long","loop","lottery","loud","lounge","love",
+"loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics","machine","mad",
+"magic","magnet","maid","mail","main","major","make","mammal","man","manage",
+"mandate","mango","mansion","manual","maple","marble","march","margin","marine","market",
+"marriage","mask","mass","master","match","material","math","matrix","matter","maximum",
+"maze","meadow","mean","measure","meat","mechanic","medal","media","melody","melt",
+"member","memory","mention","menu","mercy","merge","merit","merry","mesh","message",
+"metal","method","middle","midnight","milk","million","mimic","mind","minimum","minor",
+"minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile",
+"model","modify","mom","moment","monitor","monkey","monster","month","moon","moral",
+"more","morning","mosquito","mother","motion","motor","mountain","mouse","move","movie",
+"much","muffin","mule","multiply","muscle","museum","mushroom","music","must","mutual",
+"myself","mystery","myth","naive","name","napkin","narrow","nasty","nation","nature",
+"near","neck","need","negative","neglect","neither","nephew","nerve","nest","net",
+"network","neutral","never","news","next","nice","night","noble","noise","nominee",
+"noodle","normal","north","nose","notable","note","nothing","notice","novel","now",
+"nuclear","number","nurse","nut","oak","obey","object","oblige","obscure","observe",
+"obtain","obvious","occur","ocean","october","odor","off","offer","office","often",
+"oil","okay","old","olive","olympic","omit","once","one","onion","online",
+"only","open","opera","opinion","oppose","option","orange","orbit","orchard","order",
+"ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer","output",
+"outside","oval","oven","over","own","owner","oxygen","oyster","ozone","pact",
+"paddle","page","pair","palace","palm","panda","panel","panic","panther","paper",
+"parade","parent","park","parrot","party","pass","patch","path","patient","patrol",
+"pattern","pause","pave","payment","peace","peanut","pear","peasant","pelican","pen",
+"penalty","pencil","people","pepper","perfect","permit","person","pet","phone","photo",
+"phrase","physical","piano","picnic","picture","piece","pig","pigeon","pill","pilot",
+"pink","pioneer","pipe","pistol","pitch","pizza","place","planet","plastic","plate",
+"play","please","pledge","pluck","plug","plunge","poem","poet","point","polar",
+"pole","police","pond","pony","pool","popular","portion","position","possible","post",
+"potato","pottery","poverty","powder","power","practice","praise","predict","prefer","prepare",
+"present","pretty","prevent","price","pride","primary","print","priority","prison","private",
+"prize","problem","process","produce","profit","program","project","promote","proof","property",
+"prosper","protect","proud","provide","public","pudding","pull","pulp","pulse","pumpkin",
+"punch","pupil","puppy","purchase","purity","purpose","purse","push","put","puzzle",
+"pyramid","quality","quantum","quarter","question","quick","quit","quiz","quote","rabbit",
+"raccoon","race","rack","radar","radio","rail","rain","raise","rally","ramp",
+"ranch","random","range","rapid","rare","rate","rather","raven","raw","razor",
+"ready","real","reason","rebel","rebuild","recall","receive","recipe","record","recycle",
+"reduce","reflect","reform","refuse","region","regret","regular","reject","relax","release",
+"relief","rely","remain","remember","remind","remove","render","renew","rent","reopen",
+"repair","repeat","replace","report","require","rescue","resemble","resist","resource","response",
+"result","retire","retreat","return","reunion","reveal","review","reward","rhythm","rib",
+"ribbon","rice","rich","ride","ridge","rifle","right","rigid","ring","riot",
+"ripple","risk","ritual","rival","river","road","roast","robot","robust","rocket",
+"romance","roof","rookie","room","rose","rotate","rough","round","route","royal",
+"rubber","rude","rug","rule","run","runway","rural","sad","saddle","sadness",
+"safe","sail","salad","salmon","salon","salt","salute","same","sample","sand",
+"satisfy","satoshi","sauce","sausage","save","say","scale","scan","scare","scatter",
+"scene","scheme","school","science","scissors","scorpion","scout","scrap","screen","script",
+"scrub","sea","search","season","seat","second","secret","section","security","seed",
+"seek","segment","select","sell","seminar","senior","sense","sentence","series","service",
+"session","settle","setup","seven","shadow","shaft","shallow","share","shed","shell",
+"sheriff","shield","shift","shine","ship","shiver","shock","shoe","shoot","shop",
+"short","shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick","side",
+"siege","sight","sign","silent","silk","silly","silver","similar","simple","since",
+"sing","siren","sister","situate","six","size","skate","sketch","ski","skill",
+"skin","skirt","skull","slab","slam","sleep","slender","slice","slide","slight",
+"slim","slogan","slot","slow","slush","small","smart","smile","smoke","smooth",
+"snack","snake","snap","sniff","snow","soap","soccer","social","sock","soda",
+"soft","solar","soldier","solid","solution","solve","someone","song","soon","sorry",
+"sort","soul","sound","soup","source","south","space","spare","spatial","spawn",
+"speak","special","speed","spell","spend","sphere","spice","spider","spike","spin",
+"spirit","split","spoil","sponsor","spoon","sport","spot","spray","spread","spring",
+"spy","square","squeeze","squirrel","stable","stadium","staff","stage","stairs","stamp",
+"stand","start","state","stay","steak","steel","stem","step","stereo","stick",
+"still","sting","stock","stomach","stone","stool","story","stove","strategy","street",
+"strike","strong","struggle","student","stuff","stumble","style","subject","submit","subway",
+"success","such","sudden","suffer","sugar","suggest","suit","summer","sun","sunny",
+"sunset","super","supply","supreme","sure","surface","surge","surprise","surround","survey",
+"suspect","sustain","swallow","swamp","swap","swarm","swear","sweet","swift","swim",
+"swing","switch","sword","symbol","symptom","syrup","system","table","tackle","tag",
+"tail","talent","talk","tank","tape","target","task","taste","tattoo","taxi",
+"teach","team","tell","ten","tenant","tennis","tent","term","test","text",
+"thank","that","theme","then","theory","there","they","thing","this","thought",
+"three","thrive","throw","thumb","thunder","ticket","tide","tiger","tilt","timber",
+"time","tiny","tip","tired","tissue","title","toast","tobacco","today","toddler",
+"toe","together","toilet","token","tomato","tomorrow","tone","tongue","tonight","tool",
+"tooth","top","topic","topple","torch","tornado","tortoise","toss","total","tourist",
+"toward","tower","town","toy","track","trade","traffic","tragic","train","transfer",
+"trap","trash","travel","tray","treat","tree","trend","trial","tribe","trick",
+"trigger","trim","trip","trophy","trouble","truck","true","truly","trumpet","trust",
+"truth","try","tube","tuition","tumble","tuna","tunnel","turkey","turn","turtle",
+"twelve","twenty","twice","twin","twist","two","type","typical","ugly","umbrella",
+"unable","unaware","uncle","uncover","under","undo","unfair","unfold","unhappy","uniform",
+"unique","unit","universe","unknown","unlock","until","unusual","unveil","update","upgrade",
+"uphold","upon","upper","upset","urban","urge","usage","use","used","useful",
+"useless","usual","utility","vacant","vacuum","vague","valid","valley","valve","van",
+"vanish","vapor","various","vast","vault","vehicle","velvet","vendor","venture","venue",
+"verb","verify","version","very","vessel","veteran","viable","vibrant","vicious","victory",
+"video","view","village","vintage","violin","virtual","virus","visa","visit","visual",
+"vital","vivid","vocal","voice","void","volcano","volume","vote","voyage","wage",
+"wagon","wait","walk","wall","walnut","want","warfare","warm","warrior","wash",
+"wasp","waste","water","wave","way","wealth","weapon","wear","weasel","weather",
+"web","wedding","weekend","weird","welcome","west","wet","whale","what","wheat",
+"wheel","when","where","whip","whisper","wide","width","wife","wild","will",
+"win","window","wine","wing","wink","winner","winter","wire","wisdom","wise",
+"wish","witness","wolf","woman","wonder","wood","wool","word","work","world",
+"worry","worth","wrap","wreck","wrestle","wrist","write","wrong","yard","year",
+"yellow","you","young","youth","zebra","zero","zone","zoo"
+];
+
+// ── BIP39 generation ──
+
+function sha256(buf) { return crypto.subtle.digest('SHA-256', buf); }
+
+function entropyToMnemonic(entropy) {
+  const bits = Array.from(entropy).map(b => b.toString(2).padStart(8, '0')).join('');
+  return sha256(entropy).then(hash => {
+    const hBits = Array.from(new Uint8Array(hash)).map(b => b.toString(2).padStart(8, '0')).join('');
+    const all = bits + hBits.slice(0, entropy.length / 4);
+    const words = [];
+    for (let i = 0; i < all.length; i += 11) words.push(WORDLIST[parseInt(all.slice(i, i + 11), 2)]);
+    return words.join(' ');
+  });
+}
+
+function generateMnemonic() {
+  return entropyToMnemonic(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+// ── RIPEMD-160 ──
+
+function ripemd160(msg) {
+  const len = msg.length, padded = new Uint8Array(Math.ceil((len + 9) / 64) * 64);
+  padded.set(msg); padded[len] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setUint32(padded.length - 8, len * 8, true);
+  let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+  const KL=[0,0x5A827999,0x6ED9EBA1,0x8F1BBCDC,0xA953FD4E], KR=[0x50A28BE6,0x5C4DD124,0x6D703EF3,0x7A6D76E9,0];
+  const RL=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,7,4,13,1,10,6,15,3,12,0,9,5,2,14,11,8,3,10,14,4,9,15,8,1,2,7,0,6,13,11,5,12,1,9,11,10,0,8,12,4,13,3,7,15,14,5,6,2,4,0,5,9,7,12,2,10,14,1,3,8,11,6,15,13];
+  const RR=[5,14,7,0,9,2,11,4,13,6,15,8,1,10,3,12,6,11,3,7,0,13,5,10,14,15,8,12,4,9,1,2,15,5,1,3,7,14,6,9,11,8,12,2,10,0,4,13,8,6,4,1,3,11,15,0,5,12,2,13,9,7,10,14,12,15,10,4,1,5,8,7,6,2,13,14,0,3,9,11];
+  const SL=[11,14,15,12,5,8,7,9,11,13,14,15,6,7,9,8,7,6,8,13,11,9,7,15,7,12,15,9,11,7,13,12,11,13,6,7,14,9,13,15,14,8,13,6,5,12,7,5,11,12,14,15,14,15,9,8,9,14,5,6,8,6,5,12,9,15,5,11,6,8,13,12,5,12,13,14,11,8,5,6];
+  const SR=[8,9,9,11,13,15,15,5,7,7,8,11,14,14,12,6,9,13,15,7,12,8,9,11,7,7,12,7,6,15,13,11,9,7,15,11,8,6,6,14,12,13,5,14,13,13,7,5,15,5,8,11,14,14,6,14,6,9,12,9,12,5,15,8,8,5,12,9,12,5,14,6,8,13,6,5,15,13,11,11];
+  const rotl = (x,n) => ((x<<n)|(x>>>(32-n)))>>>0;
+  const f = (j,x,y,z) => j<16?(x^y^z)>>>0:j<32?((x&y)|(~x&z))>>>0:j<48?((x|~y)^z)>>>0:j<64?((x&z)|(y&~z))>>>0:(x^(y|~z))>>>0;
+  for (let o = 0; o < padded.length; o += 64) {
+    const X = new Uint32Array(16);
+    for (let i = 0; i < 16; i++) X[i] = dv.getUint32(o + i*4, true);
+    let al=h0,bl=h1,cl=h2,dl=h3,el=h4,ar=h0,br=h1,cr=h2,dr=h3,er=h4;
+    for (let j = 0; j < 80; j++) {
+      const r = j>>>4;
+      let tl=(al+f(j,bl,cl,dl)+X[RL[j]]+KL[r])>>>0; tl=(rotl(tl,SL[j])+el)>>>0;
+      al=el;el=dl;dl=rotl(cl,10);cl=bl;bl=tl;
+      let tr=(ar+f(79-j,br,cr,dr)+X[RR[j]]+KR[r])>>>0; tr=(rotl(tr,SR[j])+er)>>>0;
+      ar=er;er=dr;dr=rotl(cr,10);cr=br;br=tr;
+    }
+    const t=(h1+cl+dr)>>>0; h1=(h2+dl+er)>>>0; h2=(h3+el+ar)>>>0;
+    h3=(h4+al+br)>>>0; h4=(h0+bl+cr)>>>0; h0=t;
+  }
+  const out = new Uint8Array(20), rv = new DataView(out.buffer);
+  rv.setUint32(0,h0,true); rv.setUint32(4,h1,true); rv.setUint32(8,h2,true);
+  rv.setUint32(12,h3,true); rv.setUint32(16,h4,true);
+  return out;
+}
+
+// ── Base58Check ──
+
+function base58Encode(buf) {
+  const A = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz', d = [0];
+  for (let i = 0; i < buf.length; i++) {
+    let c = buf[i];
+    for (let j = 0; j < d.length; j++) { c += d[j]<<8; d[j] = c%58; c = (c/58)|0; }
+    while (c) { d.push(c%58); c = (c/58)|0; }
+  }
+  let s = '';
+  for (let i = 0; i < buf.length && buf[i]===0; i++) s += A[0];
+  for (let i = d.length-1; i >= 0; i--) s += A[d[i]];
+  return s;
+}
+
+async function base58Check(versionByte, hash160) {
+  const v = new Uint8Array(21); v[0] = versionByte; v.set(hash160, 1);
+  const c1 = new Uint8Array(await sha256(v));
+  const c2 = new Uint8Array(await sha256(c1));
+  const full = new Uint8Array(25); full.set(v); full.set(c2.slice(0,4), 21);
+  return base58Encode(full);
+}
+
+// ── Chain configuration ──
+
+const CHAINS = [
+  { id:'btc',  name:'Bitcoin',    sym:'BTC',  coinType:0,   type:'btc', ver:0x00, dec:8,  color:'#f7931a', bal:'mempool', api:'https://blockstream.info/api' },
+  { id:'ltc',  name:'Litecoin',   sym:'LTC',  coinType:2,   type:'btc', ver:0x30, dec:8,  color:'#345d9d', bal:'mempool', api:'https://litecoinspace.org/api' },
+  { id:'doge', name:'Dogecoin',   sym:'DOGE', coinType:3,   type:'btc', ver:0x1e, dec:8,  color:'#c2a633', bal:'blockchair', net:'dogecoin' },
+  { id:'dash', name:'Dash',       sym:'DASH', coinType:5,   type:'btc', ver:0x4c, dec:8,  color:'#008ce7', bal:'blockchair', net:'dash' },
+  { id:'trx',  name:'Tron',       sym:'TRX',  coinType:195, type:'trx', dec:6,    color:'#ff0013', bal:'trongrid' },
+  { id:'eth',  name:'Ethereum',   sym:'ETH',  coinType:60,  type:'evm', dec:18, color:'#627eea', rpc:'https://ethereum-rpc.publicnode.com' },
+  { id:'bsc',  name:'BNB Chain',  sym:'BNB',  coinType:60,  type:'evm', dec:18, color:'#f3ba2f', rpc:'https://bsc-dataseed.binance.org' },
+  { id:'pol',  name:'Polygon',    sym:'POL',  coinType:60,  type:'evm', dec:18, color:'#8247e5', rpc:'https://polygon-bor-rpc.publicnode.com' },
+  { id:'avax', name:'Avalanche',  sym:'AVAX', coinType:60,  type:'evm', dec:18, color:'#e84142', rpc:'https://api.avax.network/ext/bc/C/rpc' },
+  { id:'arb',  name:'Arbitrum',   sym:'ETH',  coinType:60,  type:'evm', dec:18, color:'#28a0f0', rpc:'https://arb1.arbitrum.io/rpc' },
+  { id:'op',   name:'Optimism',   sym:'ETH',  coinType:60,  type:'evm', dec:18, color:'#ff0420', rpc:'https://mainnet.optimism.io' },
+  { id:'base', name:'Base',       sym:'ETH',  coinType:60,  type:'evm', dec:18, color:'#0052ff', rpc:'https://mainnet.base.org' },
+  { id:'ftm',  name:'Fantom',     sym:'FTM',  coinType:60,  type:'evm', dec:18, color:'#1969ff', rpc:'https://rpcapi.fantom.network' },
+];
+
+const BTC_CHAINS = CHAINS.filter(c => c.type === 'btc');
+const EVM_CHAINS = CHAINS.filter(c => c.type === 'evm');
+const TRX_CHAIN  = CHAINS.find(c => c.type === 'trx');
+
+const TOKENS = [
+  { sym:'USDT', contracts:{
+    eth:'0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    bsc:'0x55d398326f99059fF775485246999027B3197955',
+    pol:'0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+    avax:'0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
+    arb:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
+    op:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
+    ftm:'0x049d68029688eAbF473097a2fC38ef61633A3C7A',
+    trx:'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+  }, decimals:{ bsc:18, _default:6 }},
+  { sym:'USDC', contracts:{
+    eth:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    bsc:'0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+    pol:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+    avax:'0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+    arb:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    op:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+    base:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    ftm:'0x04068DA6C83AFCFA0e13ba15A6696662335D5B75',
+    trx:'TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8',
+  }, decimals:{ bsc:18, _default:6 }},
+];
+
+// ── BTC Puzzle addresses (77 unsolved, ~903 BTC total) ──
+
+const PUZZLE_ADDRS = new Map([
+  ['1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU',{n:71,btc:7.1}],
+  ['1JTK7s9YVYywfm5XUH7RNhHJH1LshCaRFR',{n:72,btc:7.2}],
+  ['12VVRNPi4SJqUTsp6FmqDqY5sGosDtysn4',{n:73,btc:7.3}],
+  ['1FWGcVDK3JGzCC3WtkYetULPszMaK2Jksv',{n:74,btc:7.4}],
+  ['1DJh2eHFYQfACPmrvpyWc8MSTYKh7w9eRF',{n:76,btc:7.6}],
+  ['1Bxk4CQdqL9p22JEtDfdXMsng1XacifUtE',{n:77,btc:7.7}],
+  ['15qF6X51huDjqTmF9BJgxXdt1xcj46Jmhb',{n:78,btc:7.8}],
+  ['1ARk8HWJMn8js8tQmGUJeQHjSE7KRkn2t8',{n:79,btc:7.9}],
+  ['15qsCm78whspNQFydGJQk5rexzxTQopnHZ',{n:81,btc:8.1}],
+  ['13zYrYhhJxp6Ui1VV7pqa5WDhNWM45ARAC',{n:82,btc:8.2}],
+  ['14MdEb4eFcT3MVG5sPFG4jGLuHJSnt1Dk2',{n:83,btc:8.3}],
+  ['1CMq3SvFcVEcpLMuuH8PUcNiqsK1oicG2D',{n:84,btc:8.4}],
+  ['1K3x5L6G57Y494fDqBfrojD28UJv4s5JcK',{n:86,btc:8.6}],
+  ['1PxH3K1Shdjb7gSEoTX7UPDZ6SH4qGPrvq',{n:87,btc:8.7}],
+  ['16AbnZjZZipwHMkYKBSfswGWKDmXHjEpSf',{n:88,btc:8.8}],
+  ['19QciEHbGVNY4hrhfKXmcBBCrJSBZ6TaVt',{n:89,btc:8.9}],
+  ['1EzVHtmbN4fs4MiNk3ppEnKKhsmXYJ4s74',{n:91,btc:9.1}],
+  ['1AE8NzzgKE7Yhz7BWtAcAAxiFMbPo82NB5',{n:92,btc:9.2}],
+  ['17Q7tuG2JwFFU9rXVj3uZqRtioH3mx2Jad',{n:93,btc:9.3}],
+  ['1K6xGMUbs6ZTXBnhw1pippqwK6wjBWtNpL',{n:94,btc:9.4}],
+  ['15ANYzzCp5BFHcCnVFzXqyibpzgPLWaD8b',{n:96,btc:9.6}],
+  ['18ywPwj39nGjqBrQJSzZVq2izR12MDpDr8',{n:97,btc:9.7}],
+  ['1CaBVPrwUxbQYYswu32w7Mj4HR4maNoJSX',{n:98,btc:9.8}],
+  ['1JWnE6p6UN7ZJBN7TtcbNDoRcjFtuDWoNL',{n:99,btc:9.9}],
+  ['1CKCVdbDJasYmhswB6HKZHEAnNaDpK7W4n',{n:101,btc:10.1}],
+  ['1PXv28YxmYMaB8zxrKeZBW8dt2HK7RkRPX',{n:102,btc:10.2}],
+  ['1AcAmB6jmtU6AiEcXkmiNE9TNVPsj9DULf',{n:103,btc:10.3}],
+  ['1EQJvpsmhazYCcKX5Au6AZmZKRnzarMVZu',{n:104,btc:10.4}],
+  ['18KsfuHuzQaBTNLASyj15hy4LuqPUo1FNB',{n:106,btc:10.6}],
+  ['15EJFC5ZTs9nhsdvSUeBXjLAuYq3SWaxTc',{n:107,btc:10.7}],
+  ['1HB1iKUqeffnVsvQsbpC6dNi1XKbyNuqao',{n:108,btc:10.8}],
+  ['1GvgAXVCbA8FBjXfWiAms4ytFeJcKsoyhL',{n:109,btc:10.9}],
+  ['1824ZJQ7nKJ9QFTRBqn7z7dHV5EGpzUpH3',{n:111,btc:11.1}],
+  ['18A7NA9FTsnJxWgkoFfPAFbQzuQxpRtCos',{n:112,btc:11.2}],
+  ['1NeGn21dUDDeqFQ63xb2SpgUuXuBLA4WT4',{n:113,btc:11.3}],
+  ['174SNxfqpdMGYy5YQcfLbSTK3MRNZEePoy',{n:114,btc:11.4}],
+  ['1MnJ6hdhvK37VLmqcdEwqC3iFxyWH2PHUV',{n:116,btc:11.6}],
+  ['1KNRfGWw7Q9Rmwsc6NT5zsdvEb9M2Wkj5Z',{n:117,btc:11.7}],
+  ['1PJZPzvGX19a7twf5HyD2VvNiPdHLzm9F6',{n:118,btc:11.8}],
+  ['1GuBBhf61rnvRe4K8zu8vdQB3kHzwFqSy7',{n:119,btc:11.9}],
+  ['1GDSuiThEV64c166LUFC9uDcVdGjqkxKyh',{n:121,btc:12.1}],
+  ['1Me3ASYt5JCTAK2XaC32RMeH34PdprrfDx',{n:122,btc:12.2}],
+  ['1CdufMQL892A69KXgv6UNBD17ywWqYpKut',{n:123,btc:12.3}],
+  ['1BkkGsX9ZM6iwL3zbqs7HWBV7SvosR6m8N',{n:124,btc:12.4}],
+  ['1AWCLZAjKbV1P7AHvaPNCKiB7ZWVDMxFiz',{n:126,btc:12.6}],
+  ['1G6EFyBRU86sThN3SSt3GrHu1sA7w7nzi4',{n:127,btc:12.7}],
+  ['1MZ2L1gFrCtkkn6DnTT2e4PFUTHw9gNwaj',{n:128,btc:12.8}],
+  ['1Hz3uv3nNZzBVMXLGadCucgjiCs5W9vaGz',{n:129,btc:12.9}],
+  ['16zRPnT8znwq42q7XeMkZUhb1bKqgRogyy',{n:131,btc:13.1}],
+  ['1KrU4dHE5WrW8rhWDsTRjR21r8t3dsrS3R',{n:132,btc:13.2}],
+  ['17uDfp5r4n441xkgLFmhNoSW1KWp6xVLD',{n:133,btc:13.3}],
+  ['13A3JrvXmvg5w9XGvyyR4JEJqiLz8ZySY3',{n:134,btc:13.4}],
+  ['1UDHPdovvR985NrWSkdWQDEQ1xuRiTALq',{n:136,btc:13.6}],
+  ['15nf31J46iLuK1ZkTnqHo7WgN5cARFK3RA',{n:137,btc:13.7}],
+  ['1Ab4vzG6wEQBDNQM1B2bvUz4fqXXdFk2WT',{n:138,btc:13.8}],
+  ['1Fz63c775VV9fNyj25d9Xfw3YHE6sKCxbt',{n:139,btc:13.9}],
+  ['1QKBaU6WAeycb3DbKbLBkX7vJiaS8r42Xo',{n:140,btc:14.0}],
+  ['1CD91Vm97mLQvXhrnoMChhJx4TP9MaQkJo',{n:141,btc:14.1}],
+  ['15MnK2jXPqTMURX4xC3h4mAZxyCcaWWEDD',{n:142,btc:14.2}],
+  ['13N66gCzWWHEZBxhVxG18P8wyjEWF9Yoi1',{n:143,btc:14.3}],
+  ['1NevxKDYuDcCh1ZMMi6ftmWwGrZKC6j7Ux',{n:144,btc:14.4}],
+  ['19GpszRNUej5yYqxXoLnbZWKew3KdVLkXg',{n:145,btc:14.5}],
+  ['1M7ipcdYHey2Y5RZM34MBbpugghmjaV89P',{n:146,btc:14.6}],
+  ['18aNhurEAJsw6BAgtANpexk5ob1aGTwSeL',{n:147,btc:14.7}],
+  ['1FwZXt6EpRT7Fkndzv6K4b4DFoT4trbMrV',{n:148,btc:14.8}],
+  ['1CXvTzR6qv8wJ7eprzUKeWxyGcHwDYP1i2',{n:149,btc:14.9}],
+  ['1MUJSJYtGPVGkBCTqGspnxyHahpt5Te8jy',{n:150,btc:15.0}],
+  ['13Q84TNNvgcL3HJiqQPvyBb9m4hxjS3jkV',{n:151,btc:15.1}],
+  ['1LuUHyrQr8PKSvbcY1v1PiuGuqFjWpDumN',{n:152,btc:15.2}],
+  ['18192XpzzdDi2K11QVHR7td2HcPS6Qs5vg',{n:153,btc:15.3}],
+  ['1NgVmsCCJaKLzGyKLFJfVequnFW9ZvnMLN',{n:154,btc:15.4}],
+  ['1AoeP37TmHdFh8uN72fu9AqgtLrUwcv2wJ',{n:155,btc:15.5}],
+  ['1FTpAbQa4h8trvhQXjXnmNhqdiGBd1oraE',{n:156,btc:15.6}],
+  ['14JHoRAdmJg3XR4RjMDh6Wed6ft6hzbQe9',{n:157,btc:15.7}],
+  ['19z6waranEf8CcP8FqNgdwUe1QRxvUNKBG',{n:158,btc:15.8}],
+  ['14u4nA5sugaswb6SZgn5av2vuChdMnD9E5',{n:159,btc:15.9}],
+  ['1NBC8uXJy1GiJ6drkiZa1WuKn51ps7EPTv',{n:160,btc:16.0}],
+]);
+
+let puzzleCheckedCount = 0;
+
+// ── Address derivation ──
+
+const cardDataMap = new WeakMap();
+
+async function deriveBtcAddress(hdNode, chain) {
+  try {
+    const node = hdNode.derivePath(`m/44'/${chain.coinType}'/0'/0/0`);
+    const pub = ethers.utils.arrayify(node.publicKey);
+    const s = new Uint8Array(await sha256(pub));
+    return await base58Check(chain.ver, ripemd160(s));
+  } catch { return null; }
+}
+
+async function deriveTrxAddress(hdNode) {
+  try {
+    const node = hdNode.derivePath("m/44'/195'/0'/0/0");
+    const uncomp = ethers.utils.arrayify(ethers.utils.computePublicKey(node.publicKey, false)).slice(1);
+    const hash = ethers.utils.arrayify(ethers.utils.keccak256(uncomp)).slice(12);
+    return await base58Check(0x41, hash);
+  } catch { return null; }
+}
+
+function deriveEvmAddress(mnemonic) {
+  try { return ethers.Wallet.fromMnemonic(mnemonic).address; } catch { return null; }
+}
+
+async function deriveAllAddresses(mnemonic) {
+  if (typeof ethers === 'undefined') return {};
+  const addrs = {};
+  const hdNode = ethers.utils.HDNode.fromMnemonic(mnemonic);
+
+  const evmAddr = deriveEvmAddress(mnemonic);
+  for (const c of EVM_CHAINS) addrs[c.id] = evmAddr;
+
+  for (const c of BTC_CHAINS) addrs[c.id] = await deriveBtcAddress(hdNode, c);
+
+  if (TRX_CHAIN) addrs[TRX_CHAIN.id] = await deriveTrxAddress(hdNode);
+
+  return addrs;
+}
+
+// ── Request throttle ──
+
+let activeFetches = 0;
+const MAX_CONCURRENT = 4;
+const fetchWaiting = [];
+const FETCH_COOLDOWN = 150;
+
+function throttledRequest(fn) {
+  return new Promise((resolve, reject) => {
+    const execute = async () => {
+      activeFetches++;
+      try { resolve(await fn()); }
+      catch(e) { reject(e); }
+      finally {
+        activeFetches--;
+        if (fetchWaiting.length) {
+          const next = fetchWaiting.shift();
+          setTimeout(next, FETCH_COOLDOWN);
+        }
+      }
+    };
+    if (activeFetches < MAX_CONCURRENT) execute();
+    else fetchWaiting.push(execute);
+  });
+}
+
+// ── Balance APIs ──
+
+async function evmBalance(rpc, address, decimals) {
+  const r = await fetch(rpc, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getBalance',params:[address,'latest']})
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  const wei = BigInt(d.result);
+  const div = 10n ** BigInt(decimals);
+  return `${wei/div}.${(wei%div).toString().padStart(decimals,'0').slice(0,6)}`;
+}
+
+async function mempoolBalance(apiBase, address) {
+  const r = await fetch(`${apiBase}/address/${address}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  const sats = (d.chain_stats.funded_txo_sum||0) - (d.chain_stats.spent_txo_sum||0);
+  return (sats/1e8).toFixed(8);
+}
+
+async function blockchairBalance(network, address) {
+  const r = await fetch(`https://api.blockchair.com/${network}/dashboards/address/${address}?limit=0`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = await r.json();
+  const info = d.data && d.data[address];
+  if (!info) return '0.00000000';
+  return ((info.address.balance || 0) / 1e8).toFixed(8);
+}
+
+async function tronAccountInfo(address) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch(`https://api.trongrid.io/v1/accounts/${address}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      const native = (!d.data || !d.data.length) ? '0.000000' : ((d.data[0].balance || 0) / 1e6).toFixed(6);
+      const trc20 = {};
+      if (d.data && d.data.length && d.data[0].trc20) {
+        for (const entry of d.data[0].trc20) {
+          for (const [contract, balance] of Object.entries(entry)) {
+            trc20[contract] = balance;
+          }
+        }
+      }
+      return { native, trc20 };
+    } catch(e) {
+      if (attempt === 2) throw e;
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+}
+
+function getChainBalance(chain, address) {
+  return throttledRequest(() => {
+    if (chain.type === 'evm') return evmBalance(chain.rpc, address, chain.dec);
+    if (chain.bal === 'mempool') return mempoolBalance(chain.api, address);
+    if (chain.bal === 'blockchair') return blockchairBalance(chain.net, address);
+    throw new Error('No API');
+  });
+}
+
+async function erc20Balance(rpc, walletAddr, contractAddr, decimals) {
+  const data = '0x70a08231' + walletAddr.slice(2).toLowerCase().padStart(64, '0');
+  const r = await fetch(rpc, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:contractAddr,data},'latest']})
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  const raw = BigInt(d.result || '0x0');
+  const div = 10n ** BigInt(decimals);
+  return `${raw/div}.${(raw%div).toString().padStart(decimals,'0').slice(0,2)}`;
+}
+
+// ── UI helpers ──
+
+function trunc(addr) {
+  if (!addr) return '—';
+  return addr.length <= 16 ? addr : addr.slice(0,10) + '…' + addr.slice(-6);
+}
+
+function setBal(el, text, cls) {
+  el.textContent = text;
+  el.className = 'chain-bal' + (cls ? ' '+cls : '');
+}
+
+function copyText(el, text) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = el.textContent;
+    el.textContent = 'Copied!'; el.style.color = 'var(--green)';
+    setTimeout(() => { el.textContent = orig; el.style.color = ''; }, 1200);
+  }).catch(() => {
+    const range = document.createRange(); range.selectNodeContents(el);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  });
+}
+
+// ── Card generation ──
+
+let totalGenerated = 0;
+
+function buildWalletHTML(addrs) {
+  const evmAddr = addrs[EVM_CHAINS[0]?.id];
+
+  let uniqueRows = '';
+  for (const c of BTC_CHAINS) {
+    const a = addrs[c.id];
+    uniqueRows += `<div class="chain-row">
+      <span class="chain-badge" style="--c:${c.color}">${c.sym}</span>
+      <span class="chain-addr" title="${a||''}" onclick="copyText(this,'${a||''}')">${trunc(a)}</span>
+      <span class="chain-bal" data-chain="${c.id}">—</span>
+    </div>`;
+  }
+
+  if (TRX_CHAIN) {
+    const a = addrs[TRX_CHAIN.id];
+    uniqueRows += `<div class="chain-row">
+      <span class="chain-badge" style="--c:${TRX_CHAIN.color}">${TRX_CHAIN.sym}</span>
+      <span class="chain-addr" title="${a||''}" onclick="copyText(this,'${a||''}')">${trunc(a)}</span>
+      <span class="chain-bal" data-chain="${TRX_CHAIN.id}">—</span>
+    </div>
+    <div class="token-bals" data-token-chain="trx"></div>`;
+  }
+
+  let evmRows = '';
+  for (const c of EVM_CHAINS) {
+    evmRows += `<div class="chain-row">
+      <span class="chain-badge" style="--c:${c.color}">${c.id.toUpperCase()}</span>
+      <span class="chain-bal" data-chain="${c.id}" style="flex:1;text-align:left">— ${c.sym}</span>
+    </div>
+    <div class="token-bals" data-token-chain="${c.id}"></div>`;
+  }
+
+  return `<details class="wallet-details">
+    <summary><span>Wallet Addresses</span> <span class="chain-count">${CHAINS.length} chains</span></summary>
+    <div class="chain-group">${uniqueRows}</div>
+    <div class="chain-group">
+      <div class="chain-group-label">EVM Chains <span class="evm-addr" title="${evmAddr||''}" onclick="copyText(this,'${evmAddr||''}')">${trunc(evmAddr)}</span></div>
+      ${evmRows}
+    </div>
+  </details>`;
+}
+
+async function generateBatch() {
+  const btn = document.getElementById('generateBtn');
+  const list = document.getElementById('phraseList');
+  const counter = document.getElementById('batchCount');
+
+  btn.disabled = true; btn.style.opacity = '0.6';
+  const isAuto = document.getElementById('autoGenToggle').checked;
+  if (!isAuto) switchTab('generator');
+
+  if (totalGenerated === 0) {
+    list.innerHTML = '';
+  } else {
+    [...list.querySelectorAll('.phrase-card')].forEach(card => {
+      if (!card.dataset.funded) card.remove();
+    });
+    if (!list.children.length) list.innerHTML = '';
+  }
+
+  const checkPromises = [];
+  for (let i = 0; i < 5; i++) {
+    totalGenerated++;
+    const mnemonic = await generateMnemonic();
+    const addrs = await deriveAllAddresses(mnemonic);
+
+    const card = document.createElement('div');
+    card.className = 'phrase-card';
+    card.style.animationDelay = `${i * 0.05}s`;
+    cardDataMap.set(card, { addrs, mnemonic });
+
+    card.innerHTML = `
+      <div class="phrase-number">${totalGenerated}</div>
+      <div class="phrase-content">
+        <div class="phrase-words">${mnemonic}</div>
+        <div class="phrase-meta">
+          <span class="valid-badge">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            Valid checksum
+          </span>
+        </div>
+        ${buildWalletHTML(addrs)}
+      </div>
+      <button class="copy-btn" onclick="copyPhrase(this, '${mnemonic}')">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>`;
+
+    list.appendChild(card);
+    checkPromises.push(checkCard(card));
+  }
+
+  counter.hidden = false;
+  counter.textContent = `${totalGenerated} phrases`;
+  btn.disabled = false; btn.style.opacity = '1';
+  if (!document.getElementById('generatorTab').hidden && list.lastElementChild) {
+    list.lastElementChild.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  await Promise.allSettled(checkPromises);
+
+  if (document.getElementById('autoGenToggle').checked) {
+    setTimeout(() => generateBatch(), 500);
+  }
+}
+
+// ── Notifications ──
+
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+function playAlert() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1100, 1320].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.value = 0.3;
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.12);
+    });
+  } catch {}
+}
+
+let titleFlashInterval = null;
+function flashTitle(msg) {
+  const orig = document.title;
+  let on = true;
+  clearInterval(titleFlashInterval);
+  titleFlashInterval = setInterval(() => {
+    document.title = on ? msg : orig;
+    on = !on;
+  }, 800);
+  setTimeout(() => { clearInterval(titleFlashInterval); document.title = orig; }, 30000);
+}
+
+function showToast(message, persistent) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (persistent ? ' toast-persistent' : '');
+  toast.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>${message}</span>` +
+    (persistent ? '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--green);cursor:pointer;font-size:1rem;padding:0 0.25rem;">✕</button>' : '');
+  container.appendChild(toast);
+  if (!persistent) setTimeout(() => toast.remove(), 5000);
+}
+
+function bigAlert(title, body) {
+  playAlert();
+  flashTitle(title);
+  showToast(body, true);
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '🔑', requireInteraction: true });
+  }
+}
+
+// ── Balance checking ──
+
+async function checkCard(cardEl) {
+  const data = cardDataMap.get(cardEl);
+  if (!data) return;
+  const { addrs, mnemonic } = data;
+  const details = cardEl.querySelector('.wallet-details');
+  if (details) details.open = true;
+
+  const promises = CHAINS.map(async chain => {
+    const addr = addrs[chain.id];
+    const balEl = cardEl.querySelector(`[data-chain="${chain.id}"]`);
+    if (!addr || !balEl) return;
+    setBal(balEl, '···', 'loading');
+    const tokenContainer = cardEl.querySelector(`[data-token-chain="${chain.id}"]`);
+
+    if (chain.type === 'trx') {
+      try {
+        const info = await throttledRequest(() => tronAccountInfo(addr));
+        const zero = parseFloat(info.native) === 0;
+        setBal(balEl, `${info.native} ${chain.sym}`, zero ? '' : 'has-funds');
+        if (tokenContainer) {
+          tokenContainer.innerHTML = '';
+          for (const token of TOKENS) {
+            const contract = token.contracts.trx;
+            if (!contract) continue;
+            const raw = info.trc20[contract] || '0';
+            const dec = token.decimals._default;
+            const val = Number(raw) / (10 ** dec);
+            const span = document.createElement('span');
+            span.textContent = `${val.toFixed(2)} ${token.sym}`;
+            span.className = 'token-item' + (val > 0 ? ' has-funds' : '');
+            tokenContainer.appendChild(span);
+          }
+        }
+      } catch {
+        setBal(balEl, 'error', 'error');
+      }
+      return;
+    }
+
+    try {
+      const bal = await getChainBalance(chain, addr);
+      const zero = parseFloat(bal) === 0;
+      setBal(balEl, `${bal} ${chain.sym}`, zero ? '' : 'has-funds');
+    } catch {
+      setBal(balEl, 'error', 'error');
+    }
+
+    if (!tokenContainer || !addr) return;
+    tokenContainer.innerHTML = '';
+
+    if (chain.type === 'evm') {
+      const tokenPromises = TOKENS.map(async token => {
+        const contract = token.contracts[chain.id];
+        if (!contract) return;
+        const dec = token.decimals[chain.id] || token.decimals._default;
+        const span = document.createElement('span');
+        span.className = 'token-item loading';
+        span.textContent = `${token.sym} ···`;
+        tokenContainer.appendChild(span);
+        try {
+          const bal = await throttledRequest(() => erc20Balance(chain.rpc, addr, contract, dec));
+          const zero = parseFloat(bal) === 0;
+          span.textContent = `${bal} ${token.sym}`;
+          span.className = 'token-item' + (zero ? '' : ' has-funds');
+        } catch {
+          span.textContent = `${token.sym} err`;
+          span.className = 'token-item error';
+        }
+      });
+      await Promise.allSettled(tokenPromises);
+    }
+  });
+  await Promise.allSettled(promises);
+
+  const funded = cardEl.querySelectorAll('.has-funds');
+  if (funded.length > 0) {
+    cardEl.dataset.funded = '1';
+    const num = cardEl.querySelector('.phrase-number')?.textContent || '?';
+    bigAlert('Wallet with balance!', `Wallet #${num} has ${funded.length} asset${funded.length > 1 ? 's' : ''} with balance!`);
+    const balances = {};
+    funded.forEach(el => {
+      const text = el.textContent.trim();
+      if (text && text !== '···') balances[text] = true;
+    });
+    saveFoundWallet(mnemonic, addrs, Object.keys(balances));
+  }
+}
+
+// ── Copy mnemonic ──
+
+function copyPhrase(btn, phrase) {
+  navigator.clipboard.writeText(phrase).then(() => {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    const el = btn.parentElement.querySelector('.phrase-words');
+    const r = document.createRange(); r.selectNodeContents(el);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  });
+}
+
+// ── LocalStorage for found wallets ──
+
+const FOUND_KEY = 'bip39_found_wallets';
+
+function loadFoundWallets() {
+  try { return JSON.parse(localStorage.getItem(FOUND_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveFoundWallet(mnemonic, addrs, balanceTexts) {
+  const found = loadFoundWallets();
+  if (found.some(w => w.mnemonic === mnemonic)) return;
+  found.push({ mnemonic, addrs, balances: balanceTexts, timestamp: Date.now() });
+  try { localStorage.setItem(FOUND_KEY, JSON.stringify(found)); } catch {}
+  updateFoundCount();
+  if (!document.getElementById('foundTab').hidden) renderFoundTab();
+}
+
+function deleteFoundWallet(index) {
+  const found = loadFoundWallets();
+  found.splice(index, 1);
+  try { localStorage.setItem(FOUND_KEY, JSON.stringify(found)); } catch {}
+  renderFoundTab();
+}
+
+function updateFoundCount() {
+  const found = loadFoundWallets();
+  const el = document.getElementById('foundCount');
+  el.textContent = found.length || '';
+}
+
+function renderFoundTab() {
+  const found = loadFoundWallets();
+  const list = document.getElementById('foundList');
+  updateFoundCount();
+
+  if (!found.length) {
+    list.innerHTML = '<div class="empty-state">No wallets with balance found yet</div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  found.forEach((w, i) => {
+    const card = document.createElement('div');
+    card.className = 'phrase-card';
+    card.innerHTML = `
+      <div class="phrase-number" style="background:var(--green)">${i + 1}</div>
+      <div class="phrase-content">
+        <div class="phrase-words">${w.mnemonic}</div>
+        <div class="phrase-meta">
+          <span class="valid-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Has balance</span>
+          <span class="found-time">${new Date(w.timestamp).toLocaleString()}</span>
+        </div>
+        <div class="found-balances">
+          ${w.balances.map(b => `<span class="found-bal">${b}</span>`).join('')}
+        </div>
+      </div>
+      <button class="delete-found" onclick="deleteFoundWallet(${i})" title="Remove">✕</button>
+      <button class="copy-btn" onclick="copyPhrase(this, '${w.mnemonic}')">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>`;
+    list.appendChild(card);
+  });
+}
+
+// ── BTC Puzzle search engine ──
+
+const PUZZLE_HIT_KEY = 'bip39_puzzle_hits';
+let puzzleSearching = false;
+let puzzleSpeedInterval = null;
+let puzzleKeysThisSecond = 0;
+
+const PUZZLE_LIST = [...PUZZLE_ADDRS.entries()].map(([addr, info]) => ({
+  address: addr, num: info.n, btc: info.btc, bits: info.n
+}));
+
+function randomKeyInRange(bits) {
+  const key = new Uint8Array(32);
+  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+  const fullBytes = Math.floor(bits / 8);
+  const extraBits = bits % 8;
+  const startByte = 32 - fullBytes - (extraBits ? 1 : 0);
+  for (let i = startByte; i < 32; i++) key[i] = randomBytes[i];
+  if (extraBits) {
+    key[startByte] = key[startByte] & ((1 << extraBits) - 1);
+    key[startByte] = key[startByte] | (1 << (extraBits - 1));
+  } else {
+    key[32 - fullBytes] = key[32 - fullBytes] | 0x80;
+  }
+  return key;
+}
+
+async function privateKeyToAddress(keyBytes) {
+  const hex = '0x' + Array.from(keyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  const signingKey = new ethers.utils.SigningKey(hex);
+  const compPub = ethers.utils.arrayify(signingKey.compressedPublicKey);
+  const s = new Uint8Array(await sha256(compPub));
+  return await base58Check(0x00, ripemd160(s));
+}
+
+async function puzzleSearchBatch() {
+  if (!puzzleSearching) return;
+  const BATCH = 20;
+  for (let i = 0; i < BATCH; i++) {
+    const puzzle = PUZZLE_LIST[Math.floor(Math.random() * PUZZLE_LIST.length)];
+    const key = randomKeyInRange(puzzle.bits);
+    const addr = await privateKeyToAddress(key);
+    puzzleCheckedCount++;
+    puzzleKeysThisSecond++;
+
+    if (addr === puzzle.address) {
+      const keyHex = Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('');
+      bigAlert(`PUZZLE #${puzzle.num} SOLVED!`, `${puzzle.btc} BTC found! Private key: ${keyHex.slice(0,20)}...`);
+      savePuzzleHit(puzzle.num, puzzle.btc, keyHex, puzzle.address);
+    }
+  }
+  document.getElementById('puzzleChecked').textContent = puzzleCheckedCount.toLocaleString();
+  setTimeout(puzzleSearchBatch, 0);
+}
+
+function togglePuzzleSearch() {
+  puzzleSearching = !puzzleSearching;
+  const btn = document.getElementById('puzzleSearchBtn');
+  if (puzzleSearching) {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop';
+    btn.classList.add('searching');
+    puzzleKeysThisSecond = 0;
+    puzzleSpeedInterval = setInterval(() => {
+      document.getElementById('puzzleSpeed').textContent = puzzleKeysThisSecond.toLocaleString();
+      puzzleKeysThisSecond = 0;
+    }, 1000);
+    puzzleSearchBatch();
+  } else {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Start Search';
+    btn.classList.remove('searching');
+    clearInterval(puzzleSpeedInterval);
+    document.getElementById('puzzleSpeed').textContent = '0';
+  }
+}
+
+function loadPuzzleHits() {
+  try { return JSON.parse(localStorage.getItem(PUZZLE_HIT_KEY)) || []; }
+  catch { return []; }
+}
+
+function savePuzzleHit(puzzleNum, btc, privateKey, address) {
+  const hits = loadPuzzleHits();
+  if (hits.some(h => h.address === address)) return;
+  hits.push({ puzzleNum, btc, privateKey, address, timestamp: Date.now() });
+  try { localStorage.setItem(PUZZLE_HIT_KEY, JSON.stringify(hits)); } catch {}
+  updatePuzzleHitCount();
+  if (!document.getElementById('puzzlesTab').hidden) renderPuzzleTab();
+}
+
+function updatePuzzleHitCount() {
+  const hits = loadPuzzleHits();
+  const el = document.getElementById('puzzleHitCount');
+  el.textContent = hits.length || '';
+}
+
+function renderPuzzleTab() {
+  const hits = loadPuzzleHits();
+  const list = document.getElementById('puzzleList');
+  document.getElementById('puzzleChecked').textContent = puzzleCheckedCount.toLocaleString();
+  updatePuzzleHitCount();
+
+  if (!hits.length) {
+    list.innerHTML = '<div class="empty-state">Hit Start to search for puzzle private keys within their known ranges</div>';
+    return;
+  }
+  list.innerHTML = '';
+  hits.forEach((h, i) => {
+    const card = document.createElement('div');
+    card.className = 'phrase-card puzzle-match';
+    card.innerHTML = `
+      <div class="phrase-number" style="background:var(--green)">#${h.puzzleNum}</div>
+      <div class="phrase-content">
+        <div class="phrase-words" style="word-break:break-all">${h.privateKey}</div>
+        <div class="phrase-meta">
+          <span class="found-bal">${h.btc} BTC</span>
+          <span class="found-time">${new Date(h.timestamp).toLocaleString()}</span>
+        </div>
+        <div style="margin-top:0.375rem;font-family:var(--font-mono);font-size:0.6875rem;color:var(--fg-dim);">${h.address}</div>
+      </div>
+      <button class="copy-btn" onclick="copyPhrase(this, '${h.privateKey}')">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>`;
+    list.appendChild(card);
+  });
+}
+
+// ── Tab switching ──
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+  document.getElementById('generatorTab').hidden = tabName !== 'generator';
+  document.getElementById('foundTab').hidden = tabName !== 'found';
+  document.getElementById('puzzlesTab').hidden = tabName !== 'puzzles';
+  if (tabName === 'found') renderFoundTab();
+  if (tabName === 'puzzles') renderPuzzleTab();
+}
+
+// ── Init ──
+
+document.getElementById('generateBtn').addEventListener('click', generateBatch);
+document.getElementById('autoGenToggle').addEventListener('change', function() {
+  if (this.checked) generateBatch();
+});
+updateFoundCount();
+updatePuzzleHitCount();
+</script>
+</body>
+</html>

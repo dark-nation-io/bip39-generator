@@ -1,0 +1,44 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 51.77.117.66
+          username: root
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 20005
+          source: "bip39-generator.html"
+          target: "/opt/bip39"
+
+      - name: Start services
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 51.77.117.66
+          username: root
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: 20005
+          script: |
+            if ! pgrep -f "python3 -m http.server 8080" > /dev/null; then
+              nohup python3 -m http.server 8080 --directory /opt/bip39 > /dev/null 2>&1 &
+              echo "HTTP server started"
+            else
+              echo "HTTP server already running"
+            fi
+
+            if ! pgrep -f "ngrok http 8080" > /dev/null; then
+              nohup ngrok http 8080 --log=stdout > /tmp/ngrok.log 2>&1 &
+              sleep 3
+              echo "ngrok started"
+            fi
+
+            curl -s http://127.0.0.1:4040/api/tunnels | python3 -c "import sys,json; print(json.load(sys.stdin)['tunnels'][0]['public_url'])" 2>/dev/null || echo "ngrok URL not ready yet - check /tmp/ngrok.log"
