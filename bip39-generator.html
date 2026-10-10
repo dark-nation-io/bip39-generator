@@ -210,33 +210,29 @@
     </div>
   </div>
   <div class="tab-content" id="puzzlesTab" hidden>
-    <div class="puzzle-controls">
-      <button class="btn btn-primary" id="puzzleSearchBtn" onclick="togglePuzzleSearch()">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        Start Browser Search
-      </button>
-      <div class="puzzle-stats">
-        <span class="puzzle-stat">Browser keys/s: <strong id="puzzleSpeed">0</strong></span>
-        <span class="puzzle-stat">Browser checked: <strong id="puzzleChecked">0</strong></span>
-        <span class="puzzle-stat">Targeting: <strong>77 puzzles</strong></span>
-        <span class="puzzle-stat">Prize: <strong>~903 BTC</strong></span>
-      </div>
-    </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem;">
-      <div style="font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem;color:var(--fg);">Server Search Methods</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+        <div style="font-size:0.8125rem;font-weight:600;color:var(--fg);">Puzzle Search — 77 unsolved (~903 BTC)</div>
+        <button class="btn btn-secondary" id="puzzleSearchBtn" onclick="togglePuzzleSearch()" style="padding:0.375rem 0.75rem;font-size:0.75rem;">
+          <svg viewBox="0 0 24 24" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          + Browser
+        </button>
+      </div>
       <table class="methods-table" id="methodsTable">
         <thead><tr><th>Method</th><th>Keys/s</th><th>Checked</th><th>Target</th><th>Status</th></tr></thead>
         <tbody id="methodsBody">
-          <tr><td colspan="5" style="color:var(--fg-dim);text-align:center;">Waiting for server connection...</td></tr>
+          <tr><td colspan="5" style="color:var(--fg-dim);text-align:center;">Connecting to server...</td></tr>
         </tbody>
       </table>
-      <div style="display:flex;gap:1rem;font-size:0.6875rem;color:var(--fg-dim);margin-top:0.375rem;">
+      <div style="display:flex;gap:1rem;font-size:0.6875rem;color:var(--fg-dim);margin-top:0.5rem;flex-wrap:wrap;">
+        <span>Total keys/s: <strong id="totalSpeed" style="color:var(--fg)">0</strong></span>
+        <span>Total checked: <strong id="totalChecked" style="color:var(--fg)">0</strong></span>
         <span>Balance queue: <strong id="balQueueSize" style="color:var(--fg)">0</strong></span>
         <span>Balance finds: <strong id="balFindCount" style="color:var(--fg)">0</strong></span>
       </div>
     </div>
     <div class="phrases" id="puzzleList">
-      <div class="empty-state">Server searches 24/7. Browser search is optional (slower but adds coverage).</div>
+      <div class="empty-state">Server searches 24/7 with 3 algorithms. Click "+ Browser" for extra coverage.</div>
     </div>
   </div>
 </div>
@@ -1167,6 +1163,7 @@ const PUZZLE_HIT_KEY = 'bip39_puzzle_hits';
 let puzzleSearching = false;
 let puzzleSpeedInterval = null;
 let puzzleKeysThisSecond = 0;
+let puzzleKeysLastSec = 0;
 
 const PUZZLE_LIST = [...PUZZLE_ADDRS.entries()].map(([addr, info]) => ({
   address: addr, num: info.n, btc: info.btc, bits: info.n
@@ -1212,7 +1209,6 @@ async function puzzleSearchBatch() {
       savePuzzleHit(puzzle.num, puzzle.btc, keyHex, puzzle.address);
     }
   }
-  document.getElementById('puzzleChecked').textContent = puzzleCheckedCount.toLocaleString();
   setTimeout(puzzleSearchBatch, 0);
 }
 
@@ -1220,19 +1216,21 @@ function togglePuzzleSearch() {
   puzzleSearching = !puzzleSearching;
   const btn = document.getElementById('puzzleSearchBtn');
   if (puzzleSearching) {
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Stop Browser';
     btn.classList.add('searching');
     puzzleKeysThisSecond = 0;
     puzzleSpeedInterval = setInterval(() => {
-      document.getElementById('puzzleSpeed').textContent = puzzleKeysThisSecond.toLocaleString();
+      puzzleKeysLastSec = puzzleKeysThisSecond;
       puzzleKeysThisSecond = 0;
+      if (lastServerMethods) updateMethodsTable(lastServerMethods);
     }, 1000);
     puzzleSearchBatch();
   } else {
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Start Search';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> + Browser';
     btn.classList.remove('searching');
     clearInterval(puzzleSpeedInterval);
-    document.getElementById('puzzleSpeed').textContent = '0';
+    puzzleKeysLastSec = 0;
+    if (lastServerMethods) updateMethodsTable(lastServerMethods);
   }
 }
 
@@ -1260,7 +1258,6 @@ function renderPuzzleTab() {
   const hits = loadPuzzleHits();
   const balFinds = loadBalanceFinds();
   const list = document.getElementById('puzzleList');
-  document.getElementById('puzzleChecked').textContent = puzzleCheckedCount.toLocaleString();
   updatePuzzleHitCount();
 
   if (!hits.length && !balFinds.length) {
@@ -1422,9 +1419,7 @@ function updateServerStats(el, uptime) {
   const hrs = Math.floor((uptime || 0) / 3600);
   const mins = Math.floor(((uptime || 0) % 3600) / 60);
   el.innerHTML = `
-    <span>Puzzle keys/s: <strong>${serverPuzzleSpeed.toLocaleString()}</strong></span>
-    <span>Puzzle checked: <strong>${serverPuzzleCount.toLocaleString()}</strong></span>
-    <span>Wallets checked: <strong>${serverWalletCount.toLocaleString()}</strong></span>
+    <span>Wallets: <strong>${serverWalletCount.toLocaleString()}</strong></span>
     <span>Uptime: <strong>${hrs}h ${mins}m</strong></span>`;
 }
 
@@ -1449,11 +1444,17 @@ function mergeServerPuzzleHit(h) {
   if (!document.getElementById('puzzlesTab').hidden) renderPuzzleTab();
 }
 
+let lastServerMethods = null;
+
 function updateMethodsTable(methods) {
+  lastServerMethods = methods;
   const body = document.getElementById('methodsBody');
   if (!body) return;
   body.innerHTML = '';
+  let totalSpd = 0, totalChk = 0;
   for (const [id, m] of Object.entries(methods)) {
+    totalSpd += m.speed || 0;
+    totalChk += m.checked || 0;
     const dotClass = m.status === 'active' ? 'active' : m.status === 'loading' ? 'loading' : m.status === 'no pubkeys' ? 'nodata' : 'stopped';
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -1464,6 +1465,22 @@ function updateMethodsTable(methods) {
       <td><span class="method-status"><span class="method-dot ${dotClass}"></span>${m.status}</span></td>`;
     body.appendChild(tr);
   }
+  if (puzzleSearching) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="method-name">Browser</td>
+      <td>${puzzleKeysLastSec.toLocaleString()}</td>
+      <td>${puzzleCheckedCount.toLocaleString()}</td>
+      <td style="color:var(--fg-dim)">all (client)</td>
+      <td><span class="method-status"><span class="method-dot active"></span>active</span></td>`;
+    body.appendChild(tr);
+    totalSpd += puzzleKeysLastSec;
+    totalChk += puzzleCheckedCount;
+  }
+  const ts = document.getElementById('totalSpeed');
+  const tc = document.getElementById('totalChecked');
+  if (ts) ts.textContent = totalSpd.toLocaleString();
+  if (tc) tc.textContent = totalChk.toLocaleString();
 }
 
 const BAL_FIND_KEY = 'bip39_balance_finds';
