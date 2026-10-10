@@ -4,11 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const EC = require('elliptic').ec;
-const BN = require('bn.js');
 
 const ec = new EC('secp256k1');
-const G = ec.g;
-const N = ec.n;
 const PORT = 8080;
 const HITS_FILE = path.join(__dirname, 'puzzle_hits.json');
 const WALLETS_FILE = path.join(__dirname, 'found_wallets.json');
@@ -272,37 +269,15 @@ function broadcast(data) {
 let walletChecked = 0;
 let puzzleHits = [];
 let foundWallets = [];
-let puzzleBalanceFinds = [];
-
 try { puzzleHits = JSON.parse(fs.readFileSync(HITS_FILE, 'utf8')); } catch {}
 try { foundWallets = JSON.parse(fs.readFileSync(WALLETS_FILE, 'utf8')); } catch {}
-try { puzzleBalanceFinds = JSON.parse(fs.readFileSync(path.join(__dirname, 'puzzle_balance_finds.json'), 'utf8')); } catch {}
-
-// ── Known puzzle public keys (from creator's 2019 dust transactions — every 5th puzzle) ──
-// Only 5 unsolved puzzles have known pubkeys. Kangaroo targets these.
-
-const KNOWN_PUBKEYS = {
-  '1QKBaU6WAeycb3DbKbLBkX7vJiaS8r42Xo': '031f6a332d3c5c4f2de2378c012f429cd109ba07d69690c6c701b6bb87860d6640', // #140
-  '19GpszRNUej5yYqxXoLnbZWKew3KdVLkXg': '03afdda497369e219a2c1c369954a930e4d3740968e5e4352475bcffce3140dae5', // #145
-  '1MUJSJYtGPVGkBCTqGspnxyHahpt5Te8jy': '03137807790ea7dc6e97901c2bc87411f45ed74a5629315c4e4b03a0a102250c49', // #150
-  '1AoeP37TmHdFh8uN72fu9AqgtLrUwcv2wJ': '035cd1854cae45391ca4ec428cc7e6c7d9984424b954209a8eea197b9e364c05f6', // #155
-  '1NBC8uXJy1GiJ6drkiZa1WuKn51ps7EPTv': '02e0a8b039282faf6fe0fd769cfbc4b6b4cf8758ba68220eac420e32b91ddfa673', // #160
-};
-
-const puzzlePubKeys = new Map();
-for (const [addr, hex] of Object.entries(KNOWN_PUBKEYS)) {
-  try { puzzlePubKeys.set(addr, ec.keyFromPublic(hex, 'hex').getPublic()); } catch {}
-}
-console.log(`Loaded ${puzzlePubKeys.size} known puzzle public keys for Kangaroo`);
 
 // ══════════════════════════════════════════
-// ── PUZZLE SEARCH METHODS ──
+// ── PUZZLE SEARCH ──
 // ══════════════════════════════════════════
 
 const methods = {
-  random:     { name: 'Random Brute',    checked: 0, speed: 0, _keysThisSec: 0, status: 'active', target: 'all' },
-  sequential: { name: 'Sequential Scan', checked: 0, speed: 0, _keysThisSec: 0, status: 'active', target: '71-90' },
-  kangaroo:   { name: 'Kangaroo',        checked: 0, speed: 0, _keysThisSec: 0, status: puzzlePubKeys.size > 0 ? 'active' : 'no pubkeys', target: `${puzzlePubKeys.size} targets` },
+  random: { name: 'Random Brute', checked: 0, speed: 0, _keysThisSec: 0, status: 'active', target: 'all 77 puzzles' },
 };
 
 function recordHit(method, puzzleNum, btc, privateKeyHex, address) {
@@ -310,10 +285,8 @@ function recordHit(method, puzzleNum, btc, privateKeyHex, address) {
   puzzleHits.push(hit);
   fs.writeFileSync(HITS_FILE, JSON.stringify(puzzleHits, null, 2));
   broadcast({ type: 'puzzle_hit', ...hit });
-  console.log(`\n!!! PUZZLE #${puzzleNum} SOLVED by ${method}!!! ${btc} BTC — Key: ${privateKeyHex}\n`);
+  console.log(`\n!!! PUZZLE #${puzzleNum} SOLVED!!! ${btc} BTC — Key: ${privateKeyHex}\n`);
 }
-
-// ── Method 1: Random Brute Force ──
 
 function randomKeyInRange(bits) {
   const key = Buffer.alloc(32);
@@ -331,7 +304,7 @@ function randomKeyInRange(bits) {
   return key;
 }
 
-function randomBruteBatch() {
+function puzzleBatch() {
   const BATCH = 500;
   for (let i = 0; i < BATCH; i++) {
     const p = PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
@@ -342,249 +315,36 @@ function randomBruteBatch() {
     if (addr === p.addr) {
       recordHit('random', p.n, p.btc, key.toString('hex'), addr);
     }
-    if (methods.random.checked % 5000 === 0) queueBalanceCheck(key, addr);
   }
-  setImmediate(randomBruteBatch);
-}
-
-// ── Method 2: Sequential Scan ──
-
-const seqTargets = PUZZLES.filter(p => p.n <= 90).sort((a, b) => a.n - b.n);
-let seqIndex = 0;
-let seqCurrentKey = null;
-let seqCurrentPuzzle = null;
-let seqRangeEnd = null;
-
-function initSeqScan() {
-  if (!seqTargets.length) return;
-  seqCurrentPuzzle = seqTargets[seqIndex % seqTargets.length];
-  const bits = seqCurrentPuzzle.n;
-  const lo = new BN(1).shln(bits - 1);
-  const range = new BN(1).shln(bits - 1);
-  const randomOffset = new BN(crypto.randomBytes(Math.ceil(bits / 8))).umod(range);
-  seqCurrentKey = lo.add(randomOffset);
-  seqRangeEnd = lo.add(range);
-  methods.sequential.target = `#${seqCurrentPuzzle.n}`;
-}
-
-function sequentialBatch() {
-  if (!seqCurrentPuzzle) { initSeqScan(); if (!seqCurrentPuzzle) return; }
-  const BATCH = 500;
-  for (let i = 0; i < BATCH; i++) {
-    if (seqCurrentKey.cmp(seqRangeEnd) >= 0) {
-      seqIndex++;
-      initSeqScan();
-      if (!seqCurrentPuzzle) return;
-    }
-    const keyBuf = Buffer.from(seqCurrentKey.toArray('be', 32));
-    const addr = privateKeyToAddress(keyBuf);
-    methods.sequential.checked++;
-    methods.sequential._keysThisSec++;
-    if (addr === seqCurrentPuzzle.addr) {
-      recordHit('sequential', seqCurrentPuzzle.n, seqCurrentPuzzle.btc, keyBuf.toString('hex'), addr);
-    }
-    if (methods.sequential.checked % 5000 === 0) queueBalanceCheck(keyBuf, addr);
-    seqCurrentKey = seqCurrentKey.addn(1);
-  }
-  setImmediate(sequentialBatch);
-}
-
-// ── Method 3: Pollard's Kangaroo ──
-
-let kangarooState = null;
-
-function initKangaroo() {
-  const eligible = PUZZLES.filter(p => puzzlePubKeys.has(p.addr)).sort((a, b) => a.n - b.n);
-  if (!eligible.length) {
-    methods.kangaroo.status = 'no pubkeys';
-    return;
-  }
-
-  const target = eligible[0];
-  const Q = puzzlePubKeys.get(target.addr);
-  const bits = target.n;
-  const lo = new BN(1).shln(bits - 1);
-  const hi = new BN(1).shln(bits);
-  const range = hi.sub(lo);
-  const sqrtRange = range.sqr ? range.isqrt ? range.isqrt() : approxSqrt(range) : approxSqrt(range);
-
-  const NUM_JUMPS = 32;
-  const jumpSizes = [];
-  const jumpPoints = [];
-  for (let i = 0; i < NUM_JUMPS; i++) {
-    const s = new BN(1).shln(Math.floor(i * bits / (2 * NUM_JUMPS)));
-    jumpSizes.push(s);
-    jumpPoints.push(G.mul(s));
-  }
-
-  const dpMask = 20;
-  const distinguished = new Map();
-
-  const tameStart = lo.add(range.divn(2));
-  const tamePoint = G.mul(tameStart);
-  const wildPoint = Q;
-
-  kangarooState = {
-    target, Q, lo, hi, bits, range, sqrtRange,
-    jumpSizes, jumpPoints, NUM_JUMPS, dpMask, distinguished,
-    tamePos: tameStart, tamePoint,
-    wildPos: new BN(0), wildPoint,
-    phase: 'tame',
-    maxSteps: sqrtRange.muln(4),
-    stepsInPhase: new BN(0),
-  };
-  methods.kangaroo.target = `#${target.n} (${bits}-bit)`;
-  methods.kangaroo.status = 'active';
-}
-
-function approxSqrt(n) {
-  if (n.isZero()) return n;
-  let x = n;
-  let y = x.addn(1).shrn(1);
-  while (y.cmp(x) < 0) { x = y; y = x.add(n.div(x)).shrn(1); }
-  return x;
-}
-
-function jumpIndex(point) {
-  const xBytes = Buffer.from(point.getX().toArray('be', 32));
-  return xBytes[31] & 31;
-}
-
-function kangarooBatch() {
-  if (!kangarooState) {
-    initKangaroo();
-    if (!kangarooState) { setTimeout(kangarooBatch, 5000); return; }
-  }
-
-  const st = kangarooState;
-  const BATCH = 200;
-
-  for (let i = 0; i < BATCH; i++) {
-    methods.kangaroo.checked++;
-    methods.kangaroo._keysThisSec++;
-    st.stepsInPhase = st.stepsInPhase.addn(1);
-
-    if (st.phase === 'tame') {
-      const j = jumpIndex(st.tamePoint);
-      st.tamePos = st.tamePos.add(st.jumpSizes[j]);
-      st.tamePoint = st.tamePoint.add(st.jumpPoints[j]);
-
-      const x = st.tamePoint.getX();
-      if (x.maskn(st.dpMask).isZero()) {
-        const key = x.toString(16);
-        st.distinguished.set(key, { pos: st.tamePos.clone(), type: 'tame' });
-      }
-
-      if (st.stepsInPhase.cmp(st.maxSteps) > 0) {
-        st.phase = 'wild';
-        st.stepsInPhase = new BN(0);
-      }
-    } else {
-      const j = jumpIndex(st.wildPoint);
-      st.wildPos = st.wildPos.add(st.jumpSizes[j]);
-      st.wildPoint = st.wildPoint.add(st.jumpPoints[j]);
-
-      const x = st.wildPoint.getX();
-      if (x.maskn(st.dpMask).isZero()) {
-        const key = x.toString(16);
-        const tameDP = st.distinguished.get(key);
-        if (tameDP) {
-          const k = tameDP.pos.sub(st.wildPos);
-          if (k.cmp(st.lo) >= 0 && k.cmp(st.hi) < 0) {
-            const keyBuf = Buffer.from(k.toArray('be', 32));
-            const addr = privateKeyToAddress(keyBuf);
-            if (addr === st.target.addr) {
-              recordHit('kangaroo', st.target.n, st.target.btc, keyBuf.toString('hex'), addr);
-              puzzlePubKeys.delete(st.target.addr);
-              kangarooState = null;
-              initKangaroo();
-              return;
-            }
-          }
-        }
-        st.distinguished.set(key, { pos: st.wildPos.clone(), type: 'wild' });
-      }
-
-      if (st.stepsInPhase.cmp(st.maxSteps) > 0) {
-        console.log(`Kangaroo: resetting for #${st.target.n} (${st.distinguished.size} DPs collected)`);
-        kangarooState = null;
-        initKangaroo();
-        return;
-      }
-    }
-  }
-  setImmediate(kangarooBatch);
-}
-
-// ── Balance checker for puzzle-generated keys ──
-
-const balanceCheckQueue = [];
-let balanceChecking = false;
-
-function queueBalanceCheck(keyBuf, addr) {
-  if (balanceCheckQueue.length > 100) return;
-  balanceCheckQueue.push({ key: Buffer.from(keyBuf), addr });
-}
-
-async function balanceCheckLoop() {
-  while (true) {
-    if (balanceCheckQueue.length === 0) { await new Promise(r => setTimeout(r, 1000)); continue; }
-    const item = balanceCheckQueue.shift();
-    try {
-      await new Promise(r => setTimeout(r, 200));
-      const bal = await checkBtcBalance(item.addr);
-      if (bal > 0) {
-        const find = { privateKey: item.key.toString('hex'), address: item.addr, balance: bal, timestamp: Date.now() };
-        puzzleBalanceFinds.push(find);
-        fs.writeFileSync(path.join(__dirname, 'puzzle_balance_finds.json'), JSON.stringify(puzzleBalanceFinds, null, 2));
-        broadcast({ type: 'puzzle_balance_find', ...find });
-        console.log(`\n!!! BALANCE FOUND !!! ${item.addr} has ${bal} BTC — Key: ${item.key.toString('hex')}\n`);
-      }
-    } catch {}
-  }
+  setImmediate(puzzleBatch);
 }
 
 // ── Stats ticker ──
 
 setInterval(() => {
-  for (const [id, m] of Object.entries(methods)) {
+  for (const m of Object.values(methods)) {
     m.speed = m._keysThisSec;
     m._keysThisSec = 0;
   }
-  const totalChecked = Object.values(methods).reduce((s, m) => s + m.checked, 0);
-  const totalSpeed = Object.values(methods).reduce((s, m) => s + m.speed, 0);
 
   broadcast({
     type: 'stats',
-    puzzleChecked: totalChecked,
-    puzzleSpeed: totalSpeed,
+    puzzleChecked: methods.random.checked,
+    puzzleSpeed: methods.random.speed,
     walletChecked,
     puzzleHits: puzzleHits.length,
     foundWallets: foundWallets.length,
-    puzzleBalanceFinds: puzzleBalanceFinds.length,
     uptime: process.uptime() | 0,
     methods: Object.fromEntries(Object.entries(methods).map(([id, m]) => [id, {
       name: m.name, checked: m.checked, speed: m.speed, status: m.status, target: m.target
     }])),
-    balanceQueueSize: balanceCheckQueue.length,
   });
 }, 1000);
 
-// ── Start puzzle engines ──
+// ── Start puzzle engine ──
 
-console.log('Starting puzzle search engines...');
-console.log('  [1] Random Brute Force (all 77 puzzles)');
-randomBruteBatch();
-
-console.log('  [2] Sequential Scan (puzzles #71-90)');
-initSeqScan();
-sequentialBatch();
-
-console.log(`  [3] Pollard's Kangaroo (${puzzlePubKeys.size} targets with known pubkeys)`);
-kangarooBatch();
-
-console.log('  [4] Balance checker (async, sampling puzzle keys)');
-balanceCheckLoop();
+console.log('Starting puzzle search (random brute force, 77 puzzles)...');
+puzzleBatch();
 
 // ── Wallet generation loop ──
 
@@ -622,7 +382,7 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'Access-Control-Allow-Origin': '*' });
     const totalChecked = Object.values(methods).reduce((s, m) => s + m.checked, 0);
     res.write(`data: ${JSON.stringify({
-      type: 'init', puzzleChecked: totalChecked, puzzleSpeed: 0, walletChecked, puzzleHits, foundWallets, puzzleBalanceFinds,
+      type: 'init', puzzleChecked: totalChecked, puzzleSpeed: 0, walletChecked, puzzleHits, foundWallets,
       uptime: process.uptime() | 0,
       methods: Object.fromEntries(Object.entries(methods).map(([id, m]) => [id, { name: m.name, checked: m.checked, speed: m.speed, status: m.status, target: m.target }])),
     })}\n\n`);
@@ -634,7 +394,7 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/stats') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     const totalChecked = Object.values(methods).reduce((s, m) => s + m.checked, 0);
-    return res.end(JSON.stringify({ puzzleChecked: totalChecked, walletChecked, puzzleHits, foundWallets, puzzleBalanceFinds, uptime: process.uptime() | 0, methods }));
+    return res.end(JSON.stringify({ puzzleChecked: totalChecked, walletChecked, puzzleHits, foundWallets, uptime: process.uptime() | 0, methods }));
   }
 
   let filePath = req.url === '/' ? '/bip39-generator.html' : req.url;
