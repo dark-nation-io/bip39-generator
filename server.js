@@ -46,6 +46,32 @@ const PUZZLES = [
 const PUZZLE_ADDR_SET = new Set(PUZZLES.map(p => p.addr));
 const PUZZLE_BY_ADDR = new Map(PUZZLES.map(p => [p.addr, p]));
 
+// ── Funded address set (Hash160 hex Set for O(1) lookup) ──
+
+const HASH160_FILE = path.join(__dirname, 'funded_hash160.bin');
+let fundedSet = null;
+let fundedCount = 0;
+
+function loadFundedAddresses() {
+  try {
+    if (!fs.existsSync(HASH160_FILE)) { console.log('funded_hash160.bin not found, skipping'); return; }
+    const buf = fs.readFileSync(HASH160_FILE);
+    fundedCount = buf.length / 20;
+    fundedSet = new Set();
+    for (let i = 0; i < fundedCount; i++) {
+      fundedSet.add(buf.subarray(i * 20, i * 20 + 20).toString('hex'));
+    }
+    console.log(`Loaded ${fundedCount.toLocaleString()} funded address hash160s into Set (${(buf.length / 1024 / 1024).toFixed(0)} MB file)`);
+  } catch (e) { console.error('Failed to load funded addresses:', e.message); }
+}
+
+function checkFundedHash160(h160) {
+  if (!fundedSet) return false;
+  return fundedSet.has(h160.toString('hex'));
+}
+
+loadFundedAddresses();
+
 // ── Crypto helpers ──
 
 const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -309,11 +335,19 @@ function puzzleBatch() {
   for (let i = 0; i < BATCH; i++) {
     const p = PUZZLES[Math.floor(Math.random() * PUZZLES.length)];
     const key = randomKeyInRange(p.n);
-    const addr = privateKeyToAddress(key);
+    const pub = Buffer.from(ec.keyFromPrivate(key).getPublic(true, 'array'));
+    const sha = crypto.createHash('sha256').update(pub).digest();
+    const h160 = crypto.createHash('ripemd160').update(sha).digest();
+    const addr = base58Check(0x00, h160);
     methods.random.checked++;
     methods.random._keysThisSec++;
-    if (addr === p.addr) {
-      recordHit('random', p.n, p.btc, key.toString('hex'), addr);
+    if (PUZZLE_ADDR_SET.has(addr)) {
+      const pi = PUZZLE_BY_ADDR.get(addr);
+      recordHit('random', pi.n, pi.btc, key.toString('hex'), addr);
+    }
+    if (fundedSet && checkFundedHash160(h160)) {
+      console.log(`\n!!! FUNDED ADDRESS HIT !!! Key: ${key.toString('hex')} Addr: ${addr}\n`);
+      recordHit('random-funded', 0, 0, key.toString('hex'), addr);
     }
   }
   setImmediate(puzzleBatch);
@@ -394,13 +428,47 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/stats') {
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     const totalChecked = Object.values(methods).reduce((s, m) => s + m.checked, 0);
-    return res.end(JSON.stringify({ puzzleChecked: totalChecked, walletChecked, puzzleHits, foundWallets, uptime: process.uptime() | 0, methods }));
+    return res.end(JSON.stringify({ puzzleChecked: totalChecked, walletChecked, puzzleHits, foundWallets, uptime: process.uptime() | 0, methods, fundedAddrs: fundedCount }));
+  }
+
+  // Check hash160(s) against funded address set — POST {hash160s: ["hex",...]}
+  if (req.url === '/api/check-addr' && req.method === 'POST') {
+    let body = '';
+    req.on('data', d => body += d);
+    req.on('end', () => {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      try {
+        const { hash160s } = JSON.parse(body);
+        if (!Array.isArray(hash160s) || hash160s.length > 100) {
+          return res.end(JSON.stringify({ error: 'max 100 per request' }));
+        }
+        const hits = [];
+        for (const hex of hash160s) {
+          const buf = Buffer.from(hex, 'hex');
+          if (buf.length === 20 && checkFundedHash160(buf)) {
+            const addr = base58Check(0x00, buf);
+            const puzzle = PUZZLE_BY_ADDR.get(addr);
+            hits.push({ hash160: hex, address: addr, puzzle: puzzle || null });
+          }
+        }
+        res.end(JSON.stringify({ hits, checked: hash160s.length }));
+      } catch (e) {
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type' });
+    return res.end();
   }
 
   let filePath = req.url === '/' ? '/bip39-generator.html' : req.url;
   filePath = path.join(__dirname, filePath);
   const ext = path.extname(filePath);
-  const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json' };
+  const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.bin': 'application/octet-stream' };
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404); return res.end('Not found'); }
     res.writeHead(200, { 'Content-Type': types[ext] || 'text/plain' });

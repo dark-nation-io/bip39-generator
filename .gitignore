@@ -1,0 +1,10 @@
+node_modules/
+funded_hash160.bin
+*.tsv.gz
+deploy/
+gpu-solver/
+igot-auto/
+rips/
+Rips-*.xlsx
+Rips-*.html
+Rips-*.pdf

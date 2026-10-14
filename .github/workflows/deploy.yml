@@ -23,8 +23,22 @@ jobs:
         run: |
           mkdir -p /opt/bip39
           cp bip39-generator.html server.js package.json /opt/bip39/
+          [ -f bloom_filter.bin ] && cp bloom_filter.bin /opt/bip39/
+          [ -f build-bloom.js ] && cp build-bloom.js /opt/bip39/
           cd /opt/bip39
           npm install --production
+
+      - name: Build funded address index if needed
+        run: |
+          cd /opt/bip39
+          if [ ! -f funded_hash160.bin ] && [ -f /root/blockchair_btc_addresses.tsv.gz ]; then
+            echo "Building funded_hash160.bin from blockchair dump..."
+            node --max-old-space-size=512 build-bloom.js /root/blockchair_btc_addresses.tsv.gz
+          elif [ -f funded_hash160.bin ]; then
+            echo "funded_hash160.bin exists ($(du -h funded_hash160.bin | cut -f1))"
+          else
+            echo "No blockchair dump found at /root/blockchair_btc_addresses.tsv.gz — skipping"
+          fi
 
       - name: Setup and restart server via systemd
         run: |

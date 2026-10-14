@@ -1043,13 +1043,24 @@ async function generateBatch() {
     const mnemonic = await generateMnemonic();
     const addrs = await deriveAllAddresses(mnemonic);
 
-    // Check every BTC address against puzzle list
+    // Check every BTC address against puzzle list + funded addresses
     for (const c of BTC_CHAINS) {
       const a = addrs[c.id];
-      if (a && PUZZLE_ADDRS.has(a)) {
+      if (!a) continue;
+      if (PUZZLE_ADDRS.has(a)) {
         const p = PUZZLE_ADDRS.get(a);
         bigAlert(`PUZZLE #${p.n} HIT!`, `${p.btc} BTC — mnemonic: ${mnemonic}`);
         savePuzzleHit(p.n, p.btc, mnemonic, a);
+      }
+      if (bloomLoaded) {
+        const h160 = base58Decode(a);
+        if (await bloomCheck(h160)) {
+          const confirmed = await confirmWithServer(Array.from(h160).map(b => b.toString(16).padStart(2, '0')).join(''));
+          if (confirmed) {
+            bigAlert('FUNDED ADDRESS!', `${confirmed.address} — mnemonic: ${mnemonic}`);
+            savePuzzleHit(0, 0, mnemonic, confirmed.address);
+          }
+        }
       }
     }
 
@@ -1318,6 +1329,61 @@ function renderFoundTab() {
   });
 }
 
+// ── Bloom filter for 21M funded BTC addresses ──
+
+let bloomFilter = null;
+let bloomBits = 0;
+let bloomK = 0;
+let bloomLoaded = false;
+let bloomAddrCount = 0;
+
+async function loadBloomFilter() {
+  try {
+    const r = await fetch('/bloom_filter.bin');
+    if (!r.ok) { console.log('Bloom filter not available'); return; }
+    const buf = await r.arrayBuffer();
+    const header = new DataView(buf, 0, 16);
+    bloomBits = header.getUint32(0, true);
+    bloomK = header.getUint32(4, true);
+    bloomAddrCount = header.getUint32(8, true);
+    bloomFilter = new Uint8Array(buf, 16);
+    bloomLoaded = true;
+    console.log(`Bloom filter loaded: ${bloomAddrCount.toLocaleString()} addresses, ${bloomK} hashes, ${(bloomFilter.length / 1024 / 1024).toFixed(1)} MB`);
+  } catch (e) { console.log('Bloom filter load failed:', e); }
+}
+
+async function bloomCheck(hash160bytes) {
+  if (!bloomLoaded) return false;
+  const h1 = new Uint8Array(await sha256(hash160bytes));
+  const extra = new Uint8Array(hash160bytes.length + 1);
+  extra.set(hash160bytes); extra[hash160bytes.length] = 1;
+  const h2 = new Uint8Array(await sha256(extra));
+  const v1 = new DataView(h1.buffer);
+  const v2 = new DataView(h2.buffer);
+  const a = v1.getBigUint64(0, true);
+  const b = v2.getBigUint64(0, true);
+  const m = BigInt(bloomBits);
+  for (let i = 0; i < bloomK; i++) {
+    const pos = Number((a + BigInt(i) * b) % m);
+    if (!(bloomFilter[pos >> 3] & (1 << (pos & 7)))) return false;
+  }
+  return true;
+}
+
+async function confirmWithServer(hash160hex) {
+  try {
+    const r = await fetch('/api/check-addr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hash160s: [hash160hex] })
+    });
+    const j = await r.json();
+    return j.hits && j.hits.length > 0 ? j.hits[0] : null;
+  } catch { return null; }
+}
+
+loadBloomFilter();
+
 // ── BTC Puzzle search engine ──
 
 const PUZZLE_HIT_KEY = 'bip39_puzzle_hits';
@@ -1400,6 +1466,19 @@ async function puzzleSearchBatch() {
       const keyHex = Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('');
       bigAlert(`PUZZLE #${puzzle.n} SOLVED!`, `${puzzle.btc} BTC found! Private key: ${keyHex.slice(0,20)}...`);
       savePuzzleHit(puzzle.n, puzzle.btc, keyHex, puzzle.address);
+    }
+
+    // Check against 21M funded address bloom filter
+    if (bloomLoaded) {
+      const h160bytes = new Uint8Array(h160hex.match(/.{2}/g).map(b => parseInt(b, 16)));
+      if (await bloomCheck(h160bytes)) {
+        const confirmed = await confirmWithServer(h160hex);
+        if (confirmed) {
+          const keyHex = Array.from(key).map(b => b.toString(16).padStart(2, '0')).join('');
+          bigAlert('FUNDED ADDRESS FOUND!', `Address: ${confirmed.address} Key: ${keyHex.slice(0,20)}...`);
+          savePuzzleHit(0, 0, keyHex, confirmed.address);
+        }
+      }
     }
   }
   setTimeout(puzzleSearchBatch, 0);
