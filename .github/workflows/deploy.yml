@@ -26,14 +26,31 @@ jobs:
           cd /opt/bip39
           npm install --production
 
-      - name: Restart server
+      - name: Setup and restart server via systemd
         run: |
-          pkill -f "node.*server.js" 2>/dev/null || true
+          cat > /etc/systemd/system/bip39.service <<'SVC'
+          [Unit]
+          Description=BIP39 Generator Server
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=/opt/bip39
+          ExecStart=/usr/bin/node /opt/bip39/server.js
+          Restart=on-failure
+          RestartSec=5
+          StandardOutput=append:/opt/bip39/server.log
+          StandardError=append:/opt/bip39/server.log
+          Environment=NODE_ENV=production
+
+          [Install]
+          WantedBy=multi-user.target
+          SVC
+          systemctl daemon-reload
+          systemctl enable bip39.service
+          systemctl restart bip39.service
           sleep 2
-          cd /opt/bip39
-          setsid nohup node server.js > server.log 2>&1 &
-          sleep 3
-          pgrep -fa "node.*server.js" && echo "Server started" || echo "FAILED TO START"
+          systemctl is-active bip39.service && echo "Server started via systemd" || (echo "FAILED"; systemctl status bip39.service)
 
       - name: Ensure ngrok is running
         run: |
