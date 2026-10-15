@@ -49,25 +49,35 @@ const PUZZLE_BY_ADDR = new Map(PUZZLES.map(p => [p.addr, p]));
 // ── Funded address set (Hash160 hex Set for O(1) lookup) ──
 
 const HASH160_FILE = path.join(__dirname, 'funded_hash160.bin');
-let fundedSet = null;
+let fundedBuf = null;
 let fundedCount = 0;
 
 function loadFundedAddresses() {
   try {
     if (!fs.existsSync(HASH160_FILE)) { console.log('funded_hash160.bin not found, skipping'); return; }
-    const buf = fs.readFileSync(HASH160_FILE);
-    fundedCount = buf.length / 20;
-    fundedSet = new Set();
-    for (let i = 0; i < fundedCount; i++) {
-      fundedSet.add(buf.subarray(i * 20, i * 20 + 20).toString('hex'));
-    }
-    console.log(`Loaded ${fundedCount.toLocaleString()} funded address hash160s into Set (${(buf.length / 1024 / 1024).toFixed(0)} MB file)`);
+    fundedBuf = fs.readFileSync(HASH160_FILE);
+    fundedCount = fundedBuf.length / 20;
+    console.log(`Loaded ${fundedCount.toLocaleString()} funded address hash160s (${(fundedBuf.length / 1024 / 1024).toFixed(0)} MB, binary search)`);
   } catch (e) { console.error('Failed to load funded addresses:', e.message); }
 }
 
 function checkFundedHash160(h160) {
-  if (!fundedSet) return false;
-  return fundedSet.has(h160.toString('hex'));
+  if (!fundedBuf) return false;
+  const needle = Buffer.isBuffer(h160) ? h160 : Buffer.from(h160, 'hex');
+  let lo = 0, hi = fundedCount - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    const off = mid * 20;
+    let cmp = 0;
+    for (let i = 0; i < 20; i++) {
+      cmp = fundedBuf[off + i] - needle[i];
+      if (cmp !== 0) break;
+    }
+    if (cmp === 0) return true;
+    if (cmp < 0) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return false;
 }
 
 loadFundedAddresses();
