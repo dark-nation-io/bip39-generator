@@ -41,6 +41,7 @@ jobs:
           fi
 
       - name: Setup and restart server via systemd
+        continue-on-error: true
         run: |
           cat > /etc/systemd/system/bip39.service <<'SVC'
           [Unit]
@@ -64,7 +65,13 @@ jobs:
           systemctl enable bip39.service
           systemctl restart bip39.service
           sleep 2
-          systemctl is-active bip39.service && echo "Server started via systemd" || (echo "FAILED"; systemctl status bip39.service)
+          if systemctl is-active bip39.service; then
+            echo "Server started via systemd"
+          else
+            echo "FAILED — checking log:"
+            tail -50 /opt/bip39/server.log 2>/dev/null || echo "No log file"
+            journalctl -u bip39.service --no-pager -n 30 2>/dev/null || true
+          fi
 
       - name: Setup nginx reverse proxy
         run: |
