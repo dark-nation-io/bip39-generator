@@ -5,6 +5,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "bs58check": "^4.0.0",
     "elliptic": "^6.5.4"
   }
 }

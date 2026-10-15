@@ -66,11 +66,45 @@ jobs:
           sleep 2
           systemctl is-active bip39.service && echo "Server started via systemd" || (echo "FAILED"; systemctl status bip39.service)
 
-      - name: Ensure ngrok is running
+      - name: Setup nginx reverse proxy
         run: |
-          if ! pgrep -f "ngrok http 8080" > /dev/null; then
-            nohup ngrok http 8080 --log=stdout > /tmp/ngrok.log 2>&1 &
-            sleep 3
-            echo "ngrok started"
+          if ! command -v nginx &> /dev/null; then
+            apt-get update && apt-get install -y nginx
           fi
-          curl -s http://127.0.0.1:4040/api/tunnels | python3 -c "import sys,json; print('Public URL:', json.load(sys.stdin)['tunnels'][0]['public_url'])" 2>/dev/null || echo "ngrok URL not ready yet"
+
+          cat > /etc/nginx/sites-available/wagerone <<'NGINX'
+          server {
+              listen 80;
+              server_name wagerone-java-wrapper.bluestufftech.com 45.141.122.45;
+
+              location / {
+                  proxy_pass http://127.0.0.1:8080;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_read_timeout 86400s;
+                  proxy_send_timeout 86400s;
+              }
+          }
+          NGINX
+
+          ln -sf /etc/nginx/sites-available/wagerone /etc/nginx/sites-enabled/wagerone
+          rm -f /etc/nginx/sites-enabled/default
+
+          nginx -t && systemctl reload nginx
+          echo "Nginx configured for wagerone.bluestufftech.com"
+
+      - name: Setup SSL with Let's Encrypt
+        run: |
+          if ! command -v certbot &> /dev/null; then
+            apt-get update && apt-get install -y certbot python3-certbot-nginx
+          fi
+          if [ ! -d /etc/letsencrypt/live/wagerone-java-wrapper.bluestufftech.com ]; then
+            certbot --nginx -d wagerone-java-wrapper.bluestufftech.com --non-interactive --agree-tos -m claudedev2@negroup.com || echo "SSL setup failed — site works on HTTP, configure DNS and retry"
+          else
+            certbot renew --dry-run || true
+          fi
