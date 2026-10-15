@@ -355,7 +355,7 @@ function puzzleBatch() {
       const pi = PUZZLE_BY_ADDR.get(addr);
       recordHit('random', pi.n, pi.btc, key.toString('hex'), addr);
     }
-    if (fundedSet && checkFundedHash160(h160)) {
+    if (fundedBuf && checkFundedHash160(h160)) {
       console.log(`\n!!! FUNDED ADDRESS HIT !!! Key: ${key.toString('hex')} Addr: ${addr}\n`);
       recordHit('random-funded', 0, 0, key.toString('hex'), addr);
     }
